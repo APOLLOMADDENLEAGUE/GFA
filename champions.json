@@ -1,6 +1,6 @@
 [
-  {"season":1,"team":"Goat Factory","mvp":"Gunslinger","roster":[["QB","Gunslinger"],["WR","Deadpool"],["WR","JBX"],["WR","Jet Ballistic"],["WR","Record"],["WR","Youfie"],["RB","JBL"],["OL","Weeman"],["OL","Deion Sandals"],["OL","EBZ"],["OL","Har"],["OL","Vortex"],["FLEX","Marrero"]]},
-  {"season":2,"team":"Shinigami","mvp":"Clifton Harler","roster":[["QB","Clifton Harler"],["WR","Poki"],["WR","Mai"],["WR","Devca"],["RB","DivinerLoco"],["RB","Seen"],["OL","Cert"],["OL","Jadarius"],["OL","Regis"],["OL","Vortex"],["OL","Vishy"],["OL","Baus"],["FLEX","xHostiluxxFlow"]]},
-  {"season":3,"team":"Tidal","mvp":"Shaq","roster":[["QB","Shaq"],["WR","Ralstoc"],["WR","Sprxks"],["WR","Chief Queef"],["RB","Papi Shrek"],["RB","Icczz"],["OL","Deebo"],["OL","Onkey"],["OL","Cheesecake"],["OL","FrattyNattyDadd"],["OL","Grub"],["C","K5xSilverJoker"]]},
-  {"season":4,"team":"Road Runners","mvp":"Spxrks","roster":[["QB","Spxrks"],["WR","Poki"],["WR","SpadeZ"],["WR","Flow"],["OL","Hipoy"],["OL","Alto"],["OL","Loba"],["FLEX","Resp"],["FLEX","Esitt"]]}
+  {"season":1,"team":"Goat Factory","roster":[["QB","Gunslinger"],["WR","Deadpool"],["WR","JBX"],["WR","Jet Ballistic"],["WR","Record"],["WR","Youfie"],["RB","JBL"],["OL","Weeman"],["OL","Deion Sandals"],["OL","EBZ"],["OL","Har"],["OL","Vortex"],["FLEX","Marrero"]]},
+  {"season":2,"team":"Shinigami","roster":[["QB","MvP"],["WR","Poki"],["WR","Mai"],["WR","Devca"],["RB","DivinerLoco"],["RB","Seen"],["OL","Cert"],["OL","Jadarius"],["OL","Regis"],["OL","Vortex"],["OL","Vishy"],["OL","Baus"],["FLEX","xHostiluxxFlow"]]},
+  {"season":3,"team":"Tidal","roster":[["QB","Shaq"],["WR","Ralstoc"],["WR","Sprxks"],["WR","Chief Queef"],["RB","Papi Shrek"],["RB","Icczz"],["OL","Deebo"],["OL","Onkey"],["OL","Cheesecake"],["OL","FrattyNattyDadd"],["OL","Grub"],["C","K5xSilverJoker"]]},
+  {"season":4,"team":"Road Runners","roster":[["QB","MvP"],["WR","Poki"],["WR","SpadeZ"],["WR","Flow"],["OL","Hipoy"],["OL","Alto"],["OL","Loba"],["FLEX","Resp"],["FLEX","Esitt"]]}
 ]
