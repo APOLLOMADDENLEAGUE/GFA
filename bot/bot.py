@@ -38,6 +38,11 @@ STAT_COLUMNS = {
     "blocking": ["Games Played", "Blocks"],
 }
 PRIMARY_STAT = {"passing": "Pass Yards", "receiving": "Rec Yards", "rushing": "Rush Yards", "defense": "Sacks", "blocking": "Blocks"}
+ALL_STAT_KEYS = [
+    "Games Played", "Comp %", "Completions", "Attempts", "Pass Yards", "Pass TDs", "Pass INTs",
+    "Receptions", "Rec Yards", "Rec TDs", "Rush Yards", "Rush TDs", "Tackles", "Sacks",
+    "INTs", "Safeties", "Other TDs", "Blocks",
+]
 
 bot = commands.Bot(command_prefix="!", intents=discord.Intents.default())
 cache: dict[str, object] = {}
@@ -166,6 +171,11 @@ async def player_autocomplete(interaction: discord.Interaction, current: str) ->
 async def on_ready():
     guild = discord.Object(id=GUILD_ID) if GUILD_ID else None
     try:
+        # Load the archive before Discord autocomplete requests arrive. The live archive
+        # can take a few seconds to answer on a cold request, while autocomplete has a
+        # very short response window.
+        await data()
+        await champions_data()
         if guild:
             bot.tree.copy_global_to(guild=guild)
             await bot.tree.sync(guild=guild)
@@ -173,9 +183,11 @@ async def on_ready():
         else:
             await bot.tree.sync()
             print("GFA global commands synced")
-        print(f"Logged in as {bot.user}")
+        print(f"Logged in as {bot.user} · archive loaded for autocomplete")
     except discord.Forbidden:
         print("GFA bot is online, but it cannot access GFA_GUILD_ID. Check that the bot is invited to that server.")
+    except Exception as error:
+        print(f"GFA archive preload failed: {error}")
 
 
 @bot.tree.command(name="standings", description="View GFA standings by season and conference")
@@ -211,7 +223,7 @@ async def stats(interaction: discord.Interaction, season: app_commands.Choice[st
         row = matches[0]
         card.title = f"{row.get('Player Name', player)} · {season_label(season.value)}"
         card.description = f"{row.get('Team', 'Team not recorded')} · {row.get('POS', 'Position not recorded')}"
-        card.add_field(name="STAT LINE", value="\n".join(f"**{key}:** {stat_value(row.get(key), key)}" for key in columns), inline=False)
+        card.add_field(name="COMPLETE STAT LINE", value="\n".join(f"**{key}:** {stat_value(row.get(key), key)}" for key in ALL_STAT_KEYS), inline=False)
     else:
         rows = sorted(rows, key=lambda row: number(row.get(primary)), reverse=True)
         for index, row in enumerate(rows[:10], 1):
@@ -273,8 +285,7 @@ async def player(interaction: discord.Interaction, player: str, season: Optional
         return await interaction.response.send_message("That player has no stats for the selected season.", ephemeral=True)
     card = embed(f"{selected.get('Player Name', player)} · Player Profile", f"{season_label(season_value)}")
     for row in rows[:10]:
-        keys = STAT_COLUMNS["passing"] + ["Rec Yards", "Rush Yards", "Tackles", "Sacks", "INTs", "Other TDs"]
-        card.add_field(name=f"{row.get('Team', 'Team not recorded')} · {row.get('POS', '—')}", value="\n".join(f"**{key}:** {stat_value(row.get(key), key)}" for key in keys), inline=False)
+        card.add_field(name=f"{row.get('Team', 'Team not recorded')} · {row.get('POS', '—')}", value="\n".join(f"**{key}:** {stat_value(row.get(key), key)}" for key in ALL_STAT_KEYS), inline=False)
     await interaction.response.send_message(embed=card)
 
 
