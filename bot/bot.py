@@ -6,6 +6,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
+from tournament import TournamentServer
 
 load_dotenv()
 
@@ -44,7 +45,18 @@ ALL_STAT_KEYS = [
     "INTs", "Safeties", "Other TDs", "Blocks",
 ]
 
-bot = commands.Bot(command_prefix="!", intents=discord.Intents.default())
+class GFABot(commands.Bot):
+    async def setup_hook(self):
+        self.tournament = TournamentServer(self, GUILD_ID)
+        await self.tournament.start()
+
+    async def close(self):
+        if hasattr(self, "tournament"):
+            await self.tournament.close()
+        await super().close()
+
+
+bot = GFABot(command_prefix="!", intents=discord.Intents.default())
 cache: dict[str, object] = {}
 PLAYER_NAMES = ['Aesoni', 'AK41', 'Alexander', 'All Pro Corner Caz', 'Alto', 'Alucard', 'Aquas', 'Aslu Chinsie', 'Autistic Toe', 'Avoid', 'Azzeatinszn', 'B++', 'BamaNick', 'Barry', 'BBQ Pringle', 'Begrip', 'BIG BOI', 'Blazin Bo', 'Blooopy', 'Blurry', 'Bobbittoo', 'Bobby Shmurda', 'Bon Bon', 'BonillaX', 'Boofed', 'Boom', 'Bous', 'Broly', 'BritShia', 'BubbleGum', 'Cam', 'CamNewtonsLaptop', 'CANK', 'Captain_Club', 'CBZ', 'Cert', 'ChadBurrito', 'CHAMORRO BEAST', 'Charlemagne', 'Chaunce', 'Chazz', 'cheesecake', 'chicken-', 'ChickenPhat', 'Chicloso', 'Chief Queef', 'Chlorine', 'Chris P Nutts', 'CJ', 'Clampa', 'CLaMPG0D', 'Clifton Harler', 'Clutchbucket', 'Cold', 'Cole', 'Connor', 'creamy', 'crims', 'Crybound', 'Cubone', 'DaDerp', 'DankLettuce', 'DarkSubject', 'Darth Maul', 'Day', 'Daze', 'Deacon Moss', 'Deadpool', 'Death', 'Deebo', 'Deion Sandals', 'Demystify', 'Destin', 'Devco', 'Devnerd', 'Dingo', 'DivinerLoco', 'DJKay', 'DK Metcalf', 'Dogs are awesome', 'Dome', 'Doncheeto', 'Doodie', 'Dootmean', 'Dream Cream', 'Drew Lock', 'Dropshot', 'Ech0', 'eezy', 'Elf', 'EliRampage', 'Emp', 'Eric', 'Esitt', 'Ethan', 'Etoch', 'Fenchii', 'Flashover', 'Frattynattydaddy', 'Frisky Wizard', 'Frosty', 'Frostyz', 'Gabe', 'Gardner', 'GG7itch', 'gloop', 'glooper', 'glooper123', 'goose', 'Graph1c', 'Gronk', 'Grub', 'Grubbs', 'GucciBoiJim', 'Gumey', 'Gundozer', 'Gundy', 'Gunslinger', 'Hab', 'Handsome', 'Hippy', 'Hollywood', 'Huk Tuu', 'Humble', 'Hypers', 'Hypnotic', 'Icczz', 'Icecube', 'iHaveADome', 'ineed2tacos', 'InitialDrift', 'Insanity', 'Itachi', 'jadarius', 'Jaeger', 'Jantz', 'Jar Jar', 'Jarebear', 'JarJar', 'JaZooK', 'JBKnuckles', 'jbL', 'JBX', 'Jesus I Finally', 'Jet Ballistic', 'Jibbs', 'jig', 'Jipper', 'Joshy', 'Jooshy', 'Juice', 'Juicee', 'JuJu', 'Kenny', 'KG', 'Konspericy', 'KSxSilverJoker', 'Lappy', 'LarryTheLegend', 'Laurenalwaysmisses', 'Leadoffplague', 'Lizard', 'Loba', 'LT Dan', 'Lt. Dan', 'Luke', 'Lunar', 'Lus75', 'Lyndeaux', 'Mac Jones', 'Magixion', 'Mai', 'Major Syn', 'Mark', 'Marrero', 'Matt', 'Matteh', 'Maus', 'MazyAtticMadness', 'McBurger', 'McGriddle', 'meritor', 'MikeB', 'MikeHockisor', 'Milk', 'Miskie', 'Mjnance', 'Moregooder', 'Moss88', 'MR CHRIST', 'MvP', 'ngl onionskin', 'nicho', 'No Credit', 'Not Braxton', 'Notadeagle', 'NovaTera', 'NoX', 'Nyx', 'Obi-Wan', 'Ohio', 'Onkey', 'Oskeet', 'OutCast', 'Panda', 'Pants', 'Papi Shrek', 'Pastrami', 'Phil', 'Play3r2', 'Poki', 'Polo', 'Pr1ce', 'Preggo', 'PunisherF5', 'Quan', 'Qwack', 'Ralstoc', 'Ratspootin', 'Record', 'Red Throbbin', 'Regis', 'Resp', 'Revan', 'RidingKeys', 'Robbie', 'Rockett Lockett', 'RustyNails', 'Ryan Fitz', 'Salty', 'Sasuke', 'Sav', 'Scooty', 'Sebaja', 'Sebward', 'SecretZ', 'Seen', 'Sethj4', 'SGT Rick', 'Shaq', 'ShinyHype', 'Shoyo', 'SilverArrow', 'SKiTSO', 'slappyfizz', 'Sloppy', 'Smitty', 'SnackPack', 'sorry but u suck', 'Soup Kitchen', 'Soy8oy', 'SpadeZ', 'Spork', 'spxrks', 'Stach', 'Stiitches', 'Stimp', 'Stupendous Man', 'Sushi', 'SuspectCody', 'SweetSpot', 'Taylor', 'Tcraft', 'TeaTree', 'ThatOneMalik', 'The Guy', 'theredhaloguy', 'Thunder', 'ToxicGamir', 'TpaK', 'Triiizy', 'Troy Polamalu', 'Turtle', 'Turtle Man', 'Twhy', 'Ty', 'Tyrone Nippums', 'Ulysses', 'UNCLESOCOM', 'Valhalla', 'Vanco', 'Vasquez', 'Velcarus', 'VirtualSkillz', 'Viscousbus', 'VOLCOM', 'VorteX', 'WazzzyMoto', 'Weeman', 'Whiplash', 'Winter', 'XenialStratos', 'Xtails', 'Y-Fi', 'Y2J', 'Ye', 'Youfiee', 'Zero0', 'Tyrone', 'Dogs', 'Maii', 'Tree Fidy', 'Echo', 'The Law', 'Lauren', 'Flow', 'Chief', 'Bloopy', 'Chuwie', 'Big O', 'bAYse', 'Jax', 'Cornman13', 'Sebb', 'CamNewton', 'FiveTool']
 
@@ -323,3 +335,4 @@ if not TOKEN:
     raise RuntimeError("Set DISCORD_TOKEN before starting the bot.")
 
 bot.run(TOKEN)
+
