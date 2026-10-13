@@ -16,6 +16,7 @@ import aiohttp
 from aiohttp import web
 
 EVENT = "halloween-2026-10-24"
+VALID_POSITIONS = ("QB", "WR", "LINE", "FLEX")
 API = "https://discord.com/api/v10"
 SESSION_TTL = 20 * 60
 
@@ -27,6 +28,13 @@ class FlowError(Exception):
 
 def safe(value):
     return html.escape(str(value or ""), quote=True)
+
+
+def signup_position(value):
+    position = str(value).strip().upper()
+    if position not in VALID_POSITIONS:
+        raise FlowError("Choose QB, WR, LINE, or FLEX as your position.")
+    return position
 
 
 class TournamentServer:
@@ -203,6 +211,7 @@ class TournamentServer:
             if not value or len(value) > maximum or any(ord(character) < 32 for character in value):
                 raise FlowError("Enter a valid name, position, and Discord username.")
             draft[key] = value
+        draft["position"] = signup_position(draft["position"])
         if form.get("consent") != "yes":
             raise FlowError("Agree to Discord verification and joining the GFA server to continue.")
         return self.new_session(request, draft, "signup")
@@ -290,6 +299,7 @@ class TournamentServer:
             raise FlowError("Start signup from GFA and verify your Discord account.", 401)
         if not self.ready or not self.registration_open:
             raise FlowError("Registration is currently unavailable. Please try again later.", 503)
+        session["draft"]["position"] = signup_position(session["draft"]["position"])
         uid = session["user"]["id"]
         async with self.locks.setdefault(uid, asyncio.Lock()):
             self.save_registration(session, "pending")

@@ -204,11 +204,11 @@ class TournamentFlowTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await self.submit(session)).status, 200)
         self.assertEqual((await self.submit(session)).status, 200)
         self.assertEqual(self.server.guild.member.add_count, 1)
-        session = await self.verify(name="Updated name", position="DB")
+        session = await self.verify(name="Updated name", position="FLEX")
         self.assertEqual((await self.submit(session)).status, 200)
         self.assertEqual(len(self.server.roster()), 1)
         self.assertEqual(self.server.roster()[0]["name"], "Updated name")
-        self.assertEqual(self.server.roster()[0]["position"], "DB")
+        self.assertEqual(self.server.roster()[0]["position"], "FLEX")
 
     async def test_player_cannot_read_organizer_roster(self):
         await self.verify()
@@ -263,6 +263,29 @@ class TournamentFlowTests(unittest.IsolatedAsyncioTestCase):
         body = await response.json()
         self.assertEqual(set(body), {"ready", "registration_open", "date"})
         self.assertEqual(body["date"], "2026-10-24")
+
+    async def test_only_supported_positions_can_complete_signup(self):
+        for entered, expected in [("qb", "QB"), ("WR", "WR"), ("LINE", "LINE"), ("Flex", "FLEX")]:
+            with self.subTest(position=entered):
+                session = await self.verify(position=entered)
+                self.assertEqual((await self.submit(session)).status, 200)
+                self.assertEqual(self.server.roster()[0]["position"], expected)
+
+    async def test_unsupported_positions_cannot_start_verification(self):
+        for position in ["RB", "DB", "OL", "DL", "WR / DB", "anything"]:
+            with self.subTest(position=position):
+                response = await self.browser.post("/signup/start", data={"name": "Player", "position": position, "discord_name": "player", "consent": "yes"}, allow_redirects=False)
+                self.assertEqual(response.status, 400)
+                self.assertNotIn("Location", response.headers)
+        self.assertEqual(self.server.sessions, {})
+        self.assertEqual(self.server.roster(), [])
+
+    async def test_old_pending_session_cannot_complete_with_unsupported_position(self):
+        session = await self.verify()
+        session["draft"]["position"] = "DB"
+        self.assertEqual((await self.submit(session)).status, 400)
+        self.assertEqual(self.server.client.joins, [])
+        self.assertEqual(self.server.roster(), [])
 
 
 if __name__ == "__main__":
