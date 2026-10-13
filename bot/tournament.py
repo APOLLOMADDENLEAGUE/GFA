@@ -151,7 +151,7 @@ class TournamentServer:
             raise FlowError("Your verification session expired. Return to GFA and sign up again.", 401)
         if verified and not session.get("user"):
             raise FlowError("Verify your Discord account before completing signup.", 401)
-        if admin and (session.get("mode") != "organizer" or session.get("user", {}).get("id") not in self.admin_ids):
+        if admin and session.get("user", {}).get("id") not in self.admin_ids:
             raise FlowError("This player list is available to GFA organizers only.", 403)
         return session
 
@@ -262,7 +262,7 @@ class TournamentServer:
             if session["mode"] == "organizer":
                 await self.revoke(session.pop("access_token", None))
                 if user["id"] not in self.admin_ids:
-                    raise FlowError("This player list is available to GFA organizers only.", 403)
+                    return self.organizer_denied_page(session)
                 return web.Response(status=302, headers={"Location": "/organizer"})
             return web.Response(status=302, headers={"Location": "/signup/review"})
         except Exception:
@@ -327,13 +327,19 @@ class TournamentServer:
             await self.revoke(session.pop("access_token", None))
             return self.success_page(session)
 
+    def organizer_denied_page(self, session):
+        username = safe(session.get("user", {}).get("username", ""))
+        return self.page("Organizer access required", f'<h2>Organizer access required.</h2><p>Signed in as <strong>@{username}</strong>.</p><p>This Discord account does not have access to the private player list.</p><a class="button" href="/organizer/login">SIGN IN WITH ANOTHER ACCOUNT</a><p class="small">Use the Discord account that owns the GFA bot or the GFA server.</p><a href="https://officialgfa.com/halloween-horror-nights/">Back to GFA signup</a>', 403)
+
     async def organizer(self, request):
         try:
-            self.session(request, verified=True, admin=True)
+            session = self.session(request, verified=True)
         except FlowError as error:
             if error.status == 401:
                 return self.page("GFA organizer", '<h2>Player registrations</h2><p>Sign in with an authorized GFA organizer Discord account.</p><a class="button" href="/organizer/login">SIGN IN WITH DISCORD ↗</a>')
             raise
+        if session["user"]["id"] not in self.admin_ids:
+            return self.organizer_denied_page(session)
         rows = self.roster()
         confirmed = sum(row["status"] == "confirmed" for row in rows)
         body = f'<h2>Tournament roster</h2><p>{confirmed} confirmed · {len(rows) - confirmed} waiting</p><a class="button" href="/organizer/roster.csv">DOWNLOAD CSV ↓</a><div class="table"><table><thead><tr><th>Name</th><th>Position</th><th>Verified Discord</th><th>Status</th></tr></thead><tbody>'

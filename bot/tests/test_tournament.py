@@ -214,8 +214,35 @@ class TournamentFlowTests(unittest.IsolatedAsyncioTestCase):
         await self.verify()
         response = await self.browser.get("/organizer")
         self.assertEqual(response.status, 403)
+        body = await response.text()
+        self.assertIn("@verified_player", body)
+        self.assertIn('href="/organizer/login"', body)
         response = await self.browser.get("/organizer/roster.csv")
         self.assertEqual(response.status, 403)
+
+    async def test_organizer_can_use_existing_verified_signup_session(self):
+        self.server.admin_ids.add(self.server.client.user["id"])
+        session = await self.verify()
+        self.assertEqual((await self.submit(session)).status, 200)
+        response = await self.browser.get("/organizer")
+        self.assertEqual(response.status, 200)
+        self.assertIn("Tournament roster", await response.text())
+        response = await self.browser.get("/organizer/roster.csv")
+        self.assertEqual(response.status, 200)
+        self.assertIn("verified_player", await response.text())
+
+    async def test_unauthorized_organizer_login_can_switch_accounts(self):
+        self.server.client.scope = "identify"
+        response = await self.browser.get("/organizer/login", allow_redirects=False)
+        state = parse_qs(urlparse(response.headers["Location"]).query)["state"][0]
+        response = await self.browser.get("/auth/discord/callback", params={"state": state, "code": "non-organizer-code"}, allow_redirects=False)
+        self.assertEqual(response.status, 403)
+        body = await response.text()
+        self.assertIn("@verified_player", body)
+        self.assertIn('href="/organizer/login"', body)
+        self.assertNotIn("Tournament roster", body)
+        self.assertEqual((await self.browser.get("/organizer/roster.csv")).status, 403)
+        self.assertEqual(self.server.client.joins, [])
 
     async def test_roster_persists_across_server_instances(self):
         session = await self.verify()
