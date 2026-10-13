@@ -342,9 +342,36 @@ class TournamentServer:
             return self.organizer_denied_page(session)
         rows = self.roster()
         confirmed = sum(row["status"] == "confirmed" for row in rows)
-        body = f'<h2>Tournament roster</h2><p>{confirmed} confirmed · {len(rows) - confirmed} waiting</p><a class="button" href="/organizer/roster.csv">DOWNLOAD CSV ↓</a><div class="table"><table><thead><tr><th>Name</th><th>Position</th><th>Verified Discord</th><th>Status</th></tr></thead><tbody>'
-        body += "".join(f'<tr><td>{safe(row["name"])}</td><td>{safe(row["position"])}</td><td>@{safe(row["discord_username"])}</td><td>{safe(row["status"].replace("_", " "))}</td></tr>' for row in rows)
-        body += '</tbody></table></div>' if rows else '</tbody></table></div><p>No player registrations yet.</p>'
+        groups = {position: [] for position in VALID_POSITIONS}
+        other = []
+        for row in rows:
+            position = str(row["position"]).strip().upper()
+            (groups[position] if position in groups else other).append(row)
+        body = f'<h2>Tournament roster</h2><p>{confirmed} confirmed · {len(rows) - confirmed} waiting</p><a class="button" href="/organizer/roster.csv">DOWNLOAD CSV ↓</a>'
+        body += '<nav class="position-nav" aria-label="Jump to position">'
+        body += "".join(f'<a href="#position-{position}"><strong>{position}</strong><span>{len(groups[position])}</span></a>' for position in VALID_POSITIONS)
+        body += '</nav>'
+        sections = [(position, groups[position]) for position in VALID_POSITIONS]
+        if other:
+            sections.append(("Needs a position update", other))
+        for position, players in sections:
+            group_id = position if position in VALID_POSITIONS else "unassigned"
+            group_confirmed = sum(row["status"] == "confirmed" for row in players)
+            body += f'<section class="position-group" id="position-{group_id}" aria-labelledby="heading-{group_id}"><div class="position-head"><h3 id="heading-{group_id}">{safe(position)}</h3><span class="position-count">{len(players)} player{"s" if len(players) != 1 else ""}</span></div>'
+            if players:
+                body += f'<p class="position-summary">{group_confirmed} confirmed · {len(players) - group_confirmed} waiting</p><div class="table"><table><thead><tr><th>Name</th>'
+                if group_id == "unassigned":
+                    body += '<th>Position</th>'
+                body += '<th>Verified Discord</th><th>Status</th></tr></thead><tbody>'
+                for row in players:
+                    body += f'<tr><td>{safe(row["name"])}</td>'
+                    if group_id == "unassigned":
+                        body += f'<td>{safe(row["position"])}</td>'
+                    body += f'<td>@{safe(row["discord_username"])}</td><td>{safe(row["status"].replace("_", " "))}</td></tr>'
+                body += '</tbody></table></div>'
+            else:
+                body += f'<p class="empty-position">No {safe(position)} players signed up yet.</p>'
+            body += '</section>'
         return self.page("GFA tournament roster", body)
 
     async def export_csv(self, request):
