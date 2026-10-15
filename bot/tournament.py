@@ -17,6 +17,7 @@ from aiohttp import web
 
 EVENT = "halloween-2026-10-24"
 VALID_POSITIONS = ("QB", "WR", "LINE", "FLEX")
+OPEN_SIGNUP_POSITIONS = ("WR", "LINE", "FLEX")
 API = "https://discord.com/api/v10"
 SESSION_TTL = 20 * 60
 
@@ -32,8 +33,10 @@ def safe(value):
 
 def signup_position(value):
     position = str(value).strip().upper()
-    if position not in VALID_POSITIONS:
-        raise FlowError("Choose QB, WR, LINE, or FLEX as your position.")
+    if position == "QB":
+        raise FlowError("QB signups are full. Choose WR, LINE, or FLEX, or contact a GFA organizer.", 409)
+    if position not in OPEN_SIGNUP_POSITIONS:
+        raise FlowError("Choose WR, LINE, or FLEX as your position.")
     return position
 
 

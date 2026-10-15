@@ -322,11 +322,43 @@ class TournamentFlowTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(body["date"], "2026-10-24")
 
     async def test_only_supported_positions_can_complete_signup(self):
-        for entered, expected in [("qb", "QB"), ("WR", "WR"), ("LINE", "LINE"), ("Flex", "FLEX")]:
+        for entered, expected in [("WR", "WR"), ("LINE", "LINE"), ("Flex", "FLEX")]:
             with self.subTest(position=entered):
                 session = await self.verify(position=entered)
                 self.assertEqual((await self.submit(session)).status, 200)
                 self.assertEqual(self.server.roster()[0]["position"], expected)
+
+    async def test_qb_signups_are_closed_and_existing_qbs_remain(self):
+        self.server.save_registration({"draft": {"name": "Existing QB", "position": "QB", "discord_name": "existing_qb"},
+                                       "user": {"id": "777", "username": "existing_qb"}}, "confirmed")
+        with sqlite3.connect(self.server.db_path) as db:
+            db.execute("INSERT INTO manual_registrations (event_key,name,position) VALUES (?,?,?)",
+                       ("halloween-2026-10-24", "Organizer QB", "QB"))
+        before = self.server.roster()
+        for position in ["QB", "qb", " Qb "]:
+            response = await self.browser.post("/signup/start", data={"name": "New QB", "position": position, "discord_name": "new_qb", "consent": "yes"}, allow_redirects=False)
+            self.assertEqual(response.status, 409)
+            self.assertIn("QB signups are full", await response.text())
+            self.assertNotIn("Location", response.headers)
+        self.assertEqual(self.server.sessions, {})
+        self.assertEqual(self.server.roster(), before)
+        self.server.admin_ids.add(self.server.client.user["id"])
+        await self.verify()
+        response = await self.browser.get("/organizer")
+        qb_group = (await response.text()).split('id="position-QB"', 1)[1].split('</section>', 1)[0]
+        self.assertIn("Existing QB", qb_group)
+        self.assertIn("Organizer QB", qb_group)
+        self.assertEqual(self.server.roster(), before)
+
+    async def test_old_qb_draft_cannot_complete_signup(self):
+        session = await self.verify()
+        session["draft"]["position"] = "QB"
+        response = await self.submit(session)
+        self.assertEqual(response.status, 409)
+        self.assertIn("QB signups are full", await response.text())
+        self.assertEqual(self.server.roster(), [])
+        self.assertEqual(self.server.client.joins, [])
+        self.assertEqual(self.server.guild.member.add_count, 0)
 
     async def test_unsupported_positions_cannot_start_verification(self):
         for position in ["RB", "DB", "OL", "DL", "WR / DB", "anything"]:

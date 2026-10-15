@@ -37,11 +37,11 @@ window.GFATournament = {
         <section class="tourney-form-card" id="tourney-signup" aria-labelledby="signup-heading">
           <div class="tourney-form-top"><span class="eyebrow">PLAYER REGISTRATION</span><span class="tourney-form-date">10.24.26</span></div>
           <h2 id="signup-heading">CLAIM YOUR SPOT.</h2>
-          <p class="tourney-form-intro">Your entry starts here.</p>
+          <p class="tourney-form-intro">QB signups are full. Select WR, LINE, or FLEX.</p>
           <form id="tourney-form" method="post" autocomplete="on">
             <div class="tourney-fields">
               <div><label for="tourney-name">Name</label><input id="tourney-name" name="name" placeholder="Your player name" required maxlength="64" autocomplete="nickname"></div>
-              <div><label for="tourney-position">Position</label><select id="tourney-position" name="position" required><option value="" disabled selected>Select position</option><option value="QB">QB</option><option value="WR">WR</option><option value="LINE">LINE</option><option value="FLEX">FLEX</option></select></div>
+              <div><label for="tourney-position">Position</label><select id="tourney-position" name="position" required><option value="" disabled selected>Select position</option><option value="WR">WR</option><option value="LINE">LINE</option><option value="FLEX">FLEX</option></select></div>
               <div class="tourney-full-field"><label for="tourney-discord">Discord name</label><input id="tourney-discord" name="discord_name" placeholder="Your Discord username" required maxlength="64" autocapitalize="none" spellcheck="false" autocomplete="off"></div>
             </div>
             <label class="tourney-consent"><input type="checkbox" name="consent" value="yes" required><span>I agree to verify my Discord account, join the GFA server, and receive the Tournament role when I complete signup.</span></label>
@@ -65,7 +65,7 @@ window.GFATournament = {
       const draft = JSON.parse(sessionStorage.getItem(draftKey) || '{}');
       ['name', 'discord_name'].forEach(key => { if (typeof draft[key] === 'string') form.elements[key].value = draft[key]; });
       const position = typeof draft.position === 'string' ? draft.position.toUpperCase() : '';
-      if (['QB', 'WR', 'LINE', 'FLEX'].includes(position)) form.elements.position.value = position;
+      if (['WR', 'LINE', 'FLEX'].includes(position)) form.elements.position.value = position;
     } catch (_) { /* Storage can be unavailable in private browsing. */ }
     form.addEventListener('submit', event => {
       if (!form.action || button.disabled) { event.preventDefault(); return; }
