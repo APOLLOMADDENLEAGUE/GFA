@@ -1,6 +1,9 @@
 import asyncio
+import csv
+import io
 from pathlib import Path
 import re
+import sqlite3
 import sys
 import tempfile
 import unittest
@@ -251,6 +254,33 @@ class TournamentFlowTests(unittest.IsolatedAsyncioTestCase):
         reopened.initialize_database()
         self.assertEqual(reopened.roster()[0]["discord_id"], self.server.client.user["id"])
         self.assertEqual(reopened.sessions, {})
+
+    async def test_manual_players_stay_private_and_are_not_discord_verified(self):
+        with sqlite3.connect(self.server.db_path) as db:
+            db.executemany("INSERT INTO manual_registrations (event_key,name,position) VALUES (?,?,?)",
+                           [("halloween-2026-10-24", "Dootmean", "WR"),
+                            ("halloween-2026-10-24", "Itachi", "WR")])
+        self.assertEqual((await self.browser.get("/organizer/roster.csv")).status, 401)
+        self.server.admin_ids.add(self.server.client.user["id"])
+        await self.verify()
+        response = await self.browser.get("/organizer")
+        self.assertEqual(response.status, 200)
+        body = await response.text()
+        wr = body.split('id="position-WR"', 1)[1].split('</section>', 1)[0]
+        self.assertIn("Dootmean", wr)
+        self.assertIn("Itachi", wr)
+        self.assertEqual(wr.count("Not verified"), 2)
+        self.assertEqual(wr.count("added by organizer"), 2)
+        self.assertIn("0 confirmed", wr)
+        response = await self.browser.get("/organizer/roster.csv")
+        rows = list(csv.DictReader(io.StringIO(await response.text())))
+        self.assertEqual({row["name"] for row in rows}, {"Dootmean", "Itachi"})
+        self.assertTrue(all(row["discord_id"] == row["discord_username"] == "" for row in rows))
+        reopened = TournamentServer(None, 987654321, database=self.server.db_path, secure=False)
+        reopened.initialize_database()
+        self.assertEqual({row["name"] for row in reopened.roster()}, {"Dootmean", "Itachi"})
+        self.assertEqual(self.server.client.joins, [])
+        self.assertEqual(self.server.guild.member.add_count, 0)
 
     async def test_closed_or_unconfigured_signup_does_not_start_oauth(self):
         self.server.client_secret = ""

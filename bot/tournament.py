@@ -75,6 +75,12 @@ class TournamentServer:
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (event_key, discord_id))""")
+            db.execute("""CREATE TABLE IF NOT EXISTS manual_registrations (
+                event_key TEXT NOT NULL, name TEXT NOT NULL COLLATE NOCASE,
+                position TEXT NOT NULL CHECK (position IN ('QB', 'WR', 'LINE', 'FLEX')),
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (event_key, name))""")
         self.db_path.chmod(0o600)
 
     def save_registration(self, session, status):
@@ -95,7 +101,12 @@ class TournamentServer:
     def roster(self):
         with closing(sqlite3.connect(self.db_path)) as db:
             db.row_factory = sqlite3.Row
-            return [dict(row) for row in db.execute("SELECT * FROM registrations WHERE event_key=? ORDER BY created_at, discord_id", (EVENT,))]
+            rows = [dict(row) for row in db.execute("SELECT * FROM registrations WHERE event_key=?", (EVENT,))]
+            for row in db.execute("SELECT * FROM manual_registrations WHERE event_key=?", (EVENT,)):
+                rows.append({**dict(row), "discord_id": "", "entered_discord_name": "",
+                             "discord_username": "", "discord_display_name": "",
+                             "status": "added_by_organizer"})
+            return sorted(rows, key=lambda row: (row["created_at"], row["discord_id"] or row["name"].casefold()))
 
     async def prepare_discord(self):
         self.setup_issues = []
@@ -367,7 +378,8 @@ class TournamentServer:
                     body += f'<tr><td>{safe(row["name"])}</td>'
                     if group_id == "unassigned":
                         body += f'<td>{safe(row["position"])}</td>'
-                    body += f'<td>@{safe(row["discord_username"])}</td><td>{safe(row["status"].replace("_", " "))}</td></tr>'
+                    discord = "@" + safe(row["discord_username"]) if row["discord_username"] else "Not verified"
+                    body += f'<td>{discord}</td><td>{safe(row["status"].replace("_", " "))}</td></tr>'
                 body += '</tbody></table></div>'
             else:
                 body += f'<p class="empty-position">No {safe(position)} players signed up yet.</p>'
@@ -385,7 +397,7 @@ class TournamentServer:
             for key in columns:
                 value = str(row[key])
                 # Preserve Discord IDs as text; prevent spreadsheet formula evaluation.
-                values.append("'" + value if key == "discord_id" or value.lstrip().startswith(("=", "+", "-", "@")) else value)
+                values.append("'" + value if value and (key == "discord_id" or value.lstrip().startswith(("=", "+", "-", "@"))) else value)
             writer.writerow(values)
         return web.Response(text=output.getvalue(), content_type="text/csv", headers={"Content-Disposition": 'attachment; filename="gfa-halloween-2026-signups.csv"'})
 
