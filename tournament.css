@@ -35,3 +35,14 @@
 @media(prefers-reduced-motion:reduce){.tourney-page *{scroll-behavior:auto!important}}
 
 .tourney-fields select{color-scheme:dark}.tourney-fields select option{background:#271c31;color:#fff6ed}
+
+/* Winners page: Halloween artwork followed by the next event announcement. */
+.tourney-page .tourney-hero-stage{min-height:0;background:linear-gradient(135deg,#100a17,#211327 55%,#2f150e);padding:12px}
+.tourney-page .tourney-winner-art{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:contain;border:1px solid #66446d;box-shadow:0 8px 35px #0008}
+.tourney-next-wrap{max-width:1330px;margin:auto;padding:0 30px 76px!important;display:block}
+.tourney-next-card{display:flex;align-items:center;justify-content:space-between;gap:28px;padding:30px 34px;background:linear-gradient(115deg,#17121d,#292039);border:1px solid #60416e;border-left:5px solid #ff9b45;border-radius:4px;box-shadow:0 14px 42px #0005;color:#fff}
+.tourney-next-card .eyebrow{color:#ffb276;font-size:11px;font-weight:800;letter-spacing:1.8px}
+.tourney-next-card h2{font:800 clamp(30px,4vw,42px)/1 'Barlow Condensed',Impact,sans-serif;margin:10px 0;color:#fff4e8}
+.tourney-next-card p{margin:0;color:#d2c8dc;font-size:14px;line-height:1.6}
+.tourney-tbd{flex:0 0 auto;padding:12px 18px;border:1px solid #ff9b45;color:#ffb276;font-size:21px;font-weight:900;letter-spacing:3px}
+@media(max-width:600px){.tourney-page .tourney-hero-stage{padding:5px}.tourney-next-wrap{padding:0 19px 48px!important}.tourney-next-card{align-items:flex-start;flex-direction:column;padding:24px 20px;gap:18px}}
