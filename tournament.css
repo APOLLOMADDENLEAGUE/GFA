@@ -46,3 +46,12 @@
 .tourney-next-card p{margin:0;color:#d2c8dc;font-size:14px;line-height:1.6}
 .tourney-tbd{flex:0 0 auto;padding:12px 18px;border:1px solid #ff9b45;color:#ffb276;font-size:21px;font-weight:900;letter-spacing:3px}
 @media(max-width:600px){.tourney-page .tourney-hero-stage{padding:5px}.tourney-next-wrap{padding:0 19px 48px!important}.tourney-next-card{align-items:flex-start;flex-direction:column;padding:24px 20px;gap:18px}}
+
+/* Halloween results: show the winners and stat leaders together. */
+.tourney-page .tourney-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:10px}
+.tourney-page .tourney-art-card{min-width:0;margin:0;overflow:hidden;background:#100a17;border:1px solid #483053;border-radius:4px}
+.tourney-page .tourney-art-card .tourney-eventline{min-height:48px;padding:12px 14px;font-size:10px;letter-spacing:.8px}
+.tourney-page .tourney-leader-art{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:contain;background:#100a17}
+.tourney-page .tourney-gallery .tourney-winner-art{border:0;box-shadow:none}
+@media(max-width:800px){.tourney-page .tourney-gallery{grid-template-columns:1fr;max-width:720px}}
+@media(max-width:600px){.tourney-page .tourney-gallery{margin:18px 15px 0;padding:6px;gap:8px}.tourney-page .tourney-art-card .tourney-eventline{min-height:0;font-size:9px;padding:10px}.tourney-page .tourney-gallery .tourney-winner-art,.tourney-page .tourney-leader-art{aspect-ratio:16/9}}
