@@ -15,9 +15,22 @@ from urllib.parse import urlencode
 import aiohttp
 from aiohttp import web
 
-EVENT = "halloween-2026-10-24"
+EVENT = "turkey-bowl-2026-11-20"
+HALLOWEEN_EVENT = "halloween-2026-10-24"
+EVENTS = {
+    EVENT: {"title": "Turkey Bowl Auction Tournament", "date": "2026-11-20",
+            "date_label": "FRIDAY · NOVEMBER 20, 2026", "short_date": "November 20",
+            "url": "https://officialgfa.com/turkey-bowl/", "image": "thanksgiving-gfa.webp",
+            "registrations": "turkey_bowl_registrations", "manual": "turkey_bowl_manual_registrations",
+            "csv": "gfa-turkey-bowl-2026-signups.csv"},
+    HALLOWEEN_EVENT: {"title": "Halloween Horror Nights Tourney", "date": "2026-10-24",
+            "date_label": "SATURDAY · OCTOBER 24, 2026", "short_date": "October 24",
+            "url": "https://officialgfa.com/halloween-horror-nights/", "image": "halloween-gfa.webp",
+            "registrations": "registrations", "manual": "manual_registrations",
+            "csv": "gfa-halloween-2026-signups.csv"},
+}
 VALID_POSITIONS = ("QB", "WR", "LINE", "FLEX")
-OPEN_SIGNUP_POSITIONS = ("WR", "LINE", "FLEX")
+OPEN_SIGNUP_POSITIONS = VALID_POSITIONS
 API = "https://discord.com/api/v10"
 SESSION_TTL = 20 * 60
 
@@ -33,10 +46,8 @@ def safe(value):
 
 def signup_position(value):
     position = str(value).strip().upper()
-    if position == "QB":
-        raise FlowError("QB signups are full. Choose WR, LINE, or FLEX, or contact a GFA organizer.", 409)
     if position not in OPEN_SIGNUP_POSITIONS:
-        raise FlowError("Choose WR, LINE, or FLEX as your position.")
+        raise FlowError("Choose QB, WR, LINE, or FLEX as your position.")
     return position
 
 
@@ -70,7 +81,8 @@ class TournamentServer:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         with closing(sqlite3.connect(self.db_path)) as db, db:
             db.execute("PRAGMA journal_mode=WAL")
-            db.execute("""CREATE TABLE IF NOT EXISTS registrations (
+            for event in EVENTS.values():
+                db.execute(f"""CREATE TABLE IF NOT EXISTS {event['registrations']} (
                 event_key TEXT NOT NULL, discord_id TEXT NOT NULL,
                 name TEXT NOT NULL, position TEXT NOT NULL,
                 entered_discord_name TEXT NOT NULL, discord_username TEXT NOT NULL,
@@ -78,7 +90,7 @@ class TournamentServer:
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (event_key, discord_id))""")
-            db.execute("""CREATE TABLE IF NOT EXISTS manual_registrations (
+                db.execute(f"""CREATE TABLE IF NOT EXISTS {event['manual']} (
                 event_key TEXT NOT NULL, name TEXT NOT NULL COLLATE NOCASE,
                 position TEXT NOT NULL CHECK (position IN ('QB', 'WR', 'LINE', 'FLEX')),
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -89,7 +101,7 @@ class TournamentServer:
     def save_registration(self, session, status):
         draft, user = session["draft"], session["user"]
         with closing(sqlite3.connect(self.db_path, timeout=5)) as db, db:
-            db.execute("""INSERT INTO registrations
+            db.execute("""INSERT INTO turkey_bowl_registrations
                 (event_key, discord_id, name, position, entered_discord_name,
                  discord_username, discord_display_name, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(event_key, discord_id) DO UPDATE SET
@@ -101,11 +113,14 @@ class TournamentServer:
                 (EVENT, user["id"], draft["name"], draft["position"], draft["discord_name"],
                  user["username"], user.get("global_name") or "", status))
 
-    def roster(self):
+    def roster(self, event_key=EVENT):
+        if event_key not in EVENTS:
+            raise FlowError("Choose a listed GFA tournament.")
+        event = EVENTS[event_key]
         with closing(sqlite3.connect(self.db_path)) as db:
             db.row_factory = sqlite3.Row
-            rows = [dict(row) for row in db.execute("SELECT * FROM registrations WHERE event_key=?", (EVENT,))]
-            for row in db.execute("SELECT * FROM manual_registrations WHERE event_key=?", (EVENT,)):
+            rows = [dict(row) for row in db.execute(f"SELECT * FROM {event['registrations']} WHERE event_key=?", (event_key,))]
+            for row in db.execute(f"SELECT * FROM {event['manual']} WHERE event_key=?", (event_key,)):
                 rows.append({**dict(row), "discord_id": "", "entered_discord_name": "",
                              "discord_username": "", "discord_display_name": "",
                              "status": "added_by_organizer"})
@@ -134,7 +149,7 @@ class TournamentServer:
             if configured and role is None:
                 raise FlowError("GFA_TOURNAMENT_ROLE_ID does not identify a GFA server role.")
             if role is None:
-                role = await self.guild.create_role(name="Tournament", reason="GFA Halloween Horror Nights Tourney signup")
+                role = await self.guild.create_role(name="Tournament", reason="GFA tournament signup")
             if role.managed or role.is_default() or role >= member.top_role:
                 raise FlowError("Move the GFA bot role above the Tournament role in Discord.")
             # Refresh the role cache after creation so membership verification sees it.
@@ -180,7 +195,7 @@ class TournamentServer:
         old = request.cookies.get(self.cookie_name, "")
         self.sessions.pop(hashlib.sha256(old.encode()).hexdigest(), None)
         raw = secrets.token_urlsafe(32)
-        session = {"draft": draft, "mode": mode, "state": secrets.token_urlsafe(32),
+        session = {"draft": draft, "mode": mode, "event_key": EVENT, "state": secrets.token_urlsafe(32),
                    "csrf": secrets.token_urlsafe(32), "expires": time.time() + SESSION_TTL}
         self.sessions[hashlib.sha256(raw.encode()).hexdigest()] = session
         params = {"response_type": "code", "client_id": self.client_id,
@@ -202,7 +217,9 @@ class TournamentServer:
             self.prune_sessions()
 
     async def status(self, request):
-        response = web.json_response({"ready": self.ready, "registration_open": self.registration_open, "date": "2026-10-24"})
+        response = web.json_response({"ready": self.ready, "registration_open": self.registration_open,
+                                      "date": EVENTS[EVENT]["date"], "event_key": EVENT,
+                                      "positions": list(OPEN_SIGNUP_POSITIONS)})
         origin = request.headers.get("Origin", "")
         if origin in {"https://officialgfa.com", "https://www.officialgfa.com", "https://apollomaddenleague.github.io", "https://gfa-gridiron.chazz-carnevale0.chatgpt.site"}:
             response.headers["Access-Control-Allow-Origin"] = origin
@@ -216,6 +233,8 @@ class TournamentServer:
         if not self.ready or not self.registration_open:
             raise FlowError("Discord signups are not open yet. Please return to GFA shortly.", 503)
         form = await request.post()
+        if form.get("event_key", EVENT) != EVENT:
+            raise FlowError("That tournament is closed. Sign up for the Turkey Bowl Auction Tournament on November 20.", 409)
         draft = {}
         for key, maximum in [("name", 64), ("position", 40), ("discord_name", 64)]:
             value = form.get(key, "")
@@ -289,7 +308,7 @@ class TournamentServer:
         body = f'<div class="verified">DISCORD VERIFIED</div><h2>Confirm your spot.</h2><p>Review your details, then complete your signup.</p><dl><dt>Name</dt><dd>{safe(draft["name"])}</dd><dt>Position</dt><dd>{safe(draft["position"])}</dd><dt>Verified Discord</dt><dd>@{safe(user["username"])}</dd></dl>'
         if message:
             body += f'<p class="alert" role="alert">{safe(message)}</p>'
-        body += f'<form method="post" action="/signup/complete"><input type="hidden" name="csrf" value="{safe(session["csrf"])}"><button type="submit">COMPLETE SIGNUP →</button></form><p class="small">This adds you to the GFA server and gives you the Tournament role. If the server asks you to accept its rules, finish that step and retry here.</p><a href="https://officialgfa.com/halloween-horror-nights/">← Edit details or use another account</a>'
+        body += f'<form method="post" action="/signup/complete"><input type="hidden" name="csrf" value="{safe(session["csrf"])}"><button type="submit">COMPLETE SIGNUP →</button></form><p class="small">This adds you to the GFA server and gives you the Tournament role. If the server asks you to accept its rules, finish that step and retry here.</p><a href="https://officialgfa.com/turkey-bowl/">← Edit details or use another account</a>'
         return self.page("Confirm your signup", body, status)
 
     async def review(self, request):
@@ -301,7 +320,7 @@ class TournamentServer:
         return self.review_page(session)
 
     def success_page(self, session):
-        return self.page("You’re signed up", f'<div class="verified">REGISTRATION CONFIRMED</div><h2>You’re in.</h2><p><strong>{safe(session["draft"]["name"])}</strong>, your spot for October 24 is saved.</p><dl><dt>Position</dt><dd>{safe(session["draft"]["position"])}</dd><dt>Discord</dt><dd>@{safe(session["user"]["username"])}</dd><dt>GFA server role</dt><dd>Tournament ✓</dd></dl><a class="button" href="https://discord.com/channels/{self.guild_id}">OPEN GFA DISCORD ↗</a><p class="small">Watch the GFA server for tournament updates.</p><a href="https://officialgfa.com/halloween-horror-nights/">← Back to GFA</a>')
+        return self.page("You’re signed up", f'<div class="verified">REGISTRATION CONFIRMED</div><h2>You’re in.</h2><p><strong>{safe(session["draft"]["name"])}</strong>, your spot for November 20 is saved.</p><dl><dt>Position</dt><dd>{safe(session["draft"]["position"])}</dd><dt>Discord</dt><dd>@{safe(session["user"]["username"])}</dd><dt>GFA server role</dt><dd>Tournament ✓</dd></dl><a class="button" href="https://discord.com/channels/{self.guild_id}">OPEN GFA DISCORD ↗</a><p class="small">Watch the GFA server for tournament updates.</p><a href="https://officialgfa.com/turkey-bowl/">← Back to GFA</a>')
 
     async def complete(self, request):
         session = self.session(request, verified=True)
@@ -311,6 +330,8 @@ class TournamentServer:
             return self.success_page(session)
         if session["mode"] != "signup" or not session.get("access_token"):
             raise FlowError("Start signup from GFA and verify your Discord account.", 401)
+        if session.get("event_key") != EVENT:
+            raise FlowError("This tournament signup has expired. Start a new Turkey Bowl signup.", 409)
         if not self.ready or not self.registration_open:
             raise FlowError("Registration is currently unavailable. Please try again later.", 503)
         session["draft"]["position"] = signup_position(session["draft"]["position"])
@@ -327,7 +348,7 @@ class TournamentServer:
                 if member.pending:
                     self.save_registration(session, "waiting_for_server_rules")
                     return self.review_page(session, "You’ve joined GFA. Open Discord and accept the server rules, then return here and complete signup.", 409)
-                await member.add_roles(self.role, reason="Verified Halloween Horror Nights Tourney signup")
+                await member.add_roles(self.role, reason="Verified Turkey Bowl Auction Tournament signup")
                 member = await self.guild.fetch_member(int(uid))
                 if not any(role.id == self.role.id for role in member.roles):
                     raise FlowError("Tournament role was not applied.")
@@ -343,9 +364,12 @@ class TournamentServer:
 
     def organizer_denied_page(self, session):
         username = safe(session.get("user", {}).get("username", ""))
-        return self.page("Organizer access required", f'<h2>Organizer access required.</h2><p>Signed in as <strong>@{username}</strong>.</p><p>This Discord account does not have access to the private player list.</p><a class="button" href="/organizer/login">SIGN IN WITH ANOTHER ACCOUNT</a><p class="small">Use the Discord account that owns the GFA bot or the GFA server.</p><a href="https://officialgfa.com/halloween-horror-nights/">Back to GFA signup</a>', 403)
+        return self.page("Organizer access required", f'<h2>Organizer access required.</h2><p>Signed in as <strong>@{username}</strong>.</p><p>This Discord account does not have access to the private player list.</p><a class="button" href="/organizer/login">SIGN IN WITH ANOTHER ACCOUNT</a><p class="small">Use the Discord account that owns the GFA bot or the GFA server.</p><a href="https://officialgfa.com/turkey-bowl/">Back to GFA signup</a>', 403)
 
     async def organizer(self, request):
+        event_key = request.query.get("event", EVENT)
+        if event_key not in EVENTS:
+            raise FlowError("Choose a listed GFA tournament.")
         try:
             session = self.session(request, verified=True)
         except FlowError as error:
@@ -354,14 +378,19 @@ class TournamentServer:
             raise
         if session["user"]["id"] not in self.admin_ids:
             return self.organizer_denied_page(session)
-        rows = self.roster()
+        rows = self.roster(event_key)
         confirmed = sum(row["status"] == "confirmed" for row in rows)
         groups = {position: [] for position in VALID_POSITIONS}
         other = []
         for row in rows:
             position = str(row["position"]).strip().upper()
             (groups[position] if position in groups else other).append(row)
-        body = f'<h2>Tournament roster</h2><p>{confirmed} confirmed · {len(rows) - confirmed} waiting</p><a class="button" href="/organizer/roster.csv">DOWNLOAD CSV ↓</a>'
+        body = '<nav class="event-tabs" aria-label="Tournament boards">'
+        for key, event in EVENTS.items():
+            current = ' aria-current="page"' if key == event_key else ''
+            label = "Turkey Bowl · Nov 20" if key == EVENT else "Halloween archive · Oct 24"
+            body += f'<a href="/organizer?event={safe(key)}"{current}>{label}</a>'
+        body += f'</nav><h2>Tournament roster</h2><p>{len(rows)} players · {confirmed} confirmed · {len(rows) - confirmed} waiting / manual</p><a class="button" href="/organizer/roster.csv?event={safe(event_key)}">DOWNLOAD CSV ↓</a>'
         body += '<nav class="position-nav" aria-label="Jump to position">'
         body += "".join(f'<a href="#position-{position}"><strong>{position}</strong><span>{len(groups[position])}</span></a>' for position in VALID_POSITIONS)
         body += '</nav>'
@@ -387,26 +416,30 @@ class TournamentServer:
             else:
                 body += f'<p class="empty-position">No {safe(position)} players signed up yet.</p>'
             body += '</section>'
-        return self.page("GFA tournament roster", body)
+        return self.page("GFA tournament roster", body, event_key=event_key)
 
     async def export_csv(self, request):
         self.session(request, verified=True, admin=True)
+        event_key = request.query.get("event", EVENT)
+        if event_key not in EVENTS:
+            raise FlowError("Choose a listed GFA tournament.")
         output = io.StringIO()
         columns = ["name", "position", "discord_username", "discord_display_name", "discord_id", "entered_discord_name", "status", "created_at", "updated_at"]
         writer = csv.writer(output)
         writer.writerow(columns)
-        for row in self.roster():
+        for row in self.roster(event_key):
             values = []
             for key in columns:
                 value = str(row[key])
                 # Preserve Discord IDs as text; prevent spreadsheet formula evaluation.
                 values.append("'" + value if value and (key == "discord_id" or value.lstrip().startswith(("=", "+", "-", "@"))) else value)
             writer.writerow(values)
-        return web.Response(text=output.getvalue(), content_type="text/csv", headers={"Content-Disposition": 'attachment; filename="gfa-halloween-2026-signups.csv"'})
+        return web.Response(text=output.getvalue(), content_type="text/csv", headers={"Content-Disposition": f'attachment; filename="{EVENTS[event_key]["csv"]}"'})
 
-    def page(self, title, body, status=200):
+    def page(self, title, body, status=200, *, event_key=EVENT):
+        event = EVENTS[event_key]
         return web.Response(status=status, content_type="text/html", text=f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{safe(title)} | GFA</title><style>
-        *{{box-sizing:border-box}}body{{margin:0;background:#111116;color:#e9e8ed;font:16px/1.6 Arial,sans-serif}}header{{border-bottom:1px solid #38343b;padding:18px 6%;display:flex;align-items:center;gap:14px}}header img{{width:48px;height:48px;object-fit:contain}}header a{{font-weight:800;color:#fff;text-decoration:none}}main{{max-width:740px;margin:55px auto;padding:0 22px}}.event{{font-size:13px;letter-spacing:1px;color:#ffac6c}}h1{{font-size:clamp(27px,5vw,42px);line-height:1.13;margin:12px 0 10px}}.card{{background:#fff;color:#152035;border-top:4px solid #ff8a32;border-radius:4px;padding:30px;margin-top:28px}}h2{{font-size:29px;line-height:1.2;margin:12px 0}}p{{color:#545d6c}}.verified{{color:#226938;font-size:12px;font-weight:bold;letter-spacing:1px}}dl{{padding:12px 0;border-top:1px solid #dedee5;border-bottom:1px solid #dedee5;margin:25px 0}}dt{{font-size:12px;color:#687080;margin-top:12px}}dd{{margin:0 0 10px;font-weight:bold;overflow-wrap:anywhere}}button,.button{{display:inline-block;width:100%;text-align:center;padding:16px 20px;background:#ff8a32;color:#201407;border:0;border-radius:3px;font:700 14px/1.4 Arial,sans-serif;text-decoration:none;cursor:pointer}}a{{color:#274e95}}a:focus-visible,button:focus-visible{{outline:3px solid #1262ed;outline-offset:4px}}.small{{font-size:13px}}.alert{{background:#fff1df;border:1px solid #e0ad70;color:#6b380c;padding:15px;border-radius:3px}}.table{{overflow:auto;margin-top:24px}}table{{border-collapse:collapse;width:100%;font-size:14px}}td,th{{text-align:left;padding:12px;border-bottom:1px solid #ddd;overflow-wrap:anywhere}}@media(max-width:500px){{main{{margin-top:30px}}.card{{padding:22px 18px}}}}</style></head><body><header><a href="https://officialgfa.com"><img src="https://officialgfa.com/assets/logo.png" alt="GFA"></a><a href="https://officialgfa.com">GFA / GRIDIRON</a></header><main><div class="event">SATURDAY · OCTOBER 24, 2026</div><h1>HALLOWEEN HORROR NIGHTS TOURNEY</h1><section class="card">{body}</section></main></body></html>''')
+        *{{box-sizing:border-box}}body{{margin:0;background:radial-gradient(ellipse at top left,#64301755,transparent 55%),#190f0b;color:#fff0d8;font:16px/1.6 Arial,sans-serif}}header{{border-bottom:1px solid #653d24;padding:18px 6%;display:flex;align-items:center;gap:14px}}header img{{width:48px;height:48px;object-fit:contain}}header a{{font-weight:800;color:#fff;text-decoration:none}}main{{max-width:960px;margin:55px auto;padding:0 22px}}.event{{font-size:13px;letter-spacing:1px;color:#ffac6c}}h1{{font-size:clamp(27px,5vw,42px);line-height:1.13;margin:12px 0 10px}}.card{{background:#fff8eb;color:#382318;border-top:4px solid #e39c35;border-radius:4px;padding:30px;margin-top:28px}}h2{{font-size:29px;line-height:1.2;margin:12px 0}}p{{color:#545d6c}}.verified{{color:#226938;font-size:12px;font-weight:bold;letter-spacing:1px}}dl{{padding:12px 0;border-top:1px solid #dedee5;border-bottom:1px solid #dedee5;margin:25px 0}}dt{{font-size:12px;color:#687080;margin-top:12px}}dd{{margin:0 0 10px;font-weight:bold;overflow-wrap:anywhere}}button,.button{{display:inline-block;width:100%;text-align:center;padding:16px 20px;background:#b95121;color:#fff8eb;border:0;border-radius:3px;font:700 14px/1.4 Arial,sans-serif;text-decoration:none;cursor:pointer}}a{{color:#8b3618}}a:focus-visible,button:focus-visible{{outline:3px solid #1262ed;outline-offset:4px}}.small{{font-size:13px}}.alert{{background:#fff1df;border:1px solid #e0ad70;color:#6b380c;padding:15px;border-radius:3px}}.event-tabs{{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px}}.event-tabs a{{padding:9px 14px;border:1px solid #bca68c;border-radius:5px;text-decoration:none;font-size:13px;font-weight:bold}}.event-tabs a[aria-current]{{background:#60351f;color:#fff4dd;border-color:#60351f}}.position-nav{{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:28px 0}}.position-nav a{{display:flex;justify-content:space-between;align-items:center;padding:12px;background:#f2dfbd;border:1px solid #dfbc82;border-radius:5px;text-decoration:none;color:#59321b}}.position-nav span,.position-count{{font-size:12px;font-weight:bold}}.position-group{{margin-top:30px;scroll-margin-top:20px;border-top:1px solid #dac6a7;padding-top:12px}}.position-head{{display:flex;justify-content:space-between;align-items:center}}.position-head h3{{font-size:25px;margin:8px 0}}.position-summary,.empty-position{{font-size:13px}}.table{{overflow:auto;margin-top:24px}}table{{border-collapse:collapse;width:100%;font-size:14px}}td,th{{text-align:left;padding:12px;border-bottom:1px solid #ddd;overflow-wrap:anywhere}}@media(max-width:500px){{main{{margin-top:30px}}.card{{padding:22px 18px}}}}</style></head><body><header><a href="https://officialgfa.com"><img src="https://officialgfa.com/assets/{safe(event["image"])}" alt="GFA"></a><a href="https://officialgfa.com">GFA / GRIDIRON</a></header><main><div class="event">{safe(event["date_label"])}</div><h1>{safe(event["title"]).upper()}</h1><section class="card">{body}</section></main></body></html>''')
 
     def make_app(self):
         @web.middleware
@@ -416,10 +449,10 @@ class TournamentServer:
             except web.HTTPException as response_error:
                 response = web.Response(status=response_error.status, text=response_error.text, headers=response_error.headers)
             except FlowError as error:
-                response = self.page("Signup needs attention", f'<h2>One more step.</h2><p role="alert">{safe(error.message)}</p><a class="button" href="https://officialgfa.com/halloween-horror-nights/">BACK TO GFA SIGNUP</a>', error.status)
+                response = self.page("Signup needs attention", f'<h2>One more step.</h2><p role="alert">{safe(error.message)}</p><a class="button" href="https://officialgfa.com/turkey-bowl/">BACK TO GFA SIGNUP</a>', error.status)
             except Exception as error:
                 print(f"Tournament request failed: {type(error).__name__}", flush=True)
-                response = self.page("Signup temporarily unavailable", '<h2>Please try again.</h2><p>We couldn’t complete this request. Return to GFA and try again shortly.</p><a href="https://officialgfa.com/halloween-horror-nights/">Back to GFA signup</a>', 503)
+                response = self.page("Signup temporarily unavailable", '<h2>Please try again.</h2><p>We couldn’t complete this request. Return to GFA and try again shortly.</p><a href="https://officialgfa.com/turkey-bowl/">Back to GFA signup</a>', 503)
             response.headers.update({"Cache-Control": "no-store", "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY",
                 "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; img-src https://officialgfa.com; form-action 'self' https://discord.com; frame-ancestors 'none'; base-uri 'none'"})
             if self.secure:

@@ -19,8 +19,8 @@ window.GFATournament = {
       </section>
       <section class="tourney-next-wrap" aria-labelledby="next-tourney-heading">
         <article class="tourney-next-card">
-          <div><div class="eyebrow">COMING UP</div><h2 id="next-tourney-heading">NEXT TOURNAMENT</h2><p>Details for the next GFA tournament will be posted here.</p></div>
-          <span class="tourney-tbd">TBD</span>
+          <div><div class="eyebrow">COMING UP</div><h2 id="next-tourney-heading">TURKEY BOWL<br>AUCTION TOURNAMENT</h2><p>November 20, 2026 · QB / WR / LINE / FLEX · Discord verified entry</p></div>
+          <a class="btn tourney-btn" href="${new URL('turkey-bowl/', this.assetRoot).href}">SIGN UP NOW <span>↗</span></a>
         </article>
       </section>`;
     document.title = 'GFA Tournament Winners | Gridiron';

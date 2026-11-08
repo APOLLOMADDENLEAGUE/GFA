@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Turkey Bowl Auction Tournament · November 20 | GFA</title>
+  <meta name="description" content="Sign up for the GFA Turkey Bowl Auction Tournament on November 20, 2026. Choose QB, WR, LINE, or FLEX and verify your Discord to enter.">
+  <link rel="canonical" href="https://officialgfa.com/turkey-bowl/">
+  <link rel="icon" href="../assets/thanksgiving-gfa.webp">
+  <link rel="stylesheet" href="../turkey-bowl.css?v=20261108">
+</head>
+<body>
+  <a class="skip" href="#signup">Skip to signup</a>
+  <div class="topline"><span>GFA · GRIDIRON 7V7</span><span>FRIDAY, NOVEMBER 20, 2026</span></div>
+  <header class="site-header">
+    <a class="brand" href="../#home" aria-label="GFA home"><img src="../assets/thanksgiving-gfa.webp" alt=""><span>GFA<small>GRIDIRON</small></span></a>
+    <nav aria-label="Main navigation"><a href="../#home">Home</a><a href="../halloween-horror-nights/">Tournament results</a><a class="active" href="./" aria-current="page">Turkey Bowl</a></nav>
+    <a class="header-cta" href="#signup">Enter tournament <span aria-hidden="true">↗</span></a>
+  </header>
+  <main>
+    <div class="event-strip"><span><i aria-hidden="true"></i> REGISTRATION OPEN</span><span>THE GFA FALL CLASSIC / 2026</span></div>
+    <section class="tournament-layout" aria-labelledby="event-title">
+      <div class="event-story">
+        <div class="eyebrow">A SEAT AT THE TABLE.</div>
+        <h1 id="event-title">THE TURKEY<br><span>BOWL.</span></h1>
+        <p class="event-subtitle">AUCTION TOURNAMENT</p>
+        <div class="event-date"><span class="date-day">20</span><div><strong>NOVEMBER 2026</strong><span>FRIDAY · GRIDIRON 7V7</span></div><span class="date-year" aria-hidden="true">11.20.26</span></div>
+        <a class="mobile-signup-link" href="#signup">ENTER THE TURKEY BOWL <span aria-hidden="true">↓</span></a>
+        <figure class="event-art"><img src="../assets/thanksgiving-gfa.webp" width="1000" height="1000" alt="GFA Thanksgiving crest surrounded by golden wheat, autumn leaves, pumpkins, and warm harvest lights." fetchpriority="high"><figcaption>GFA PRESENTS <span>THE TURKEY BOWL AUCTION TOURNAMENT</span></figcaption></figure>
+        <p class="story-note">Bring your game to the Thanksgiving table. Pick your position, connect your Discord, and get ready for the auction.</p>
+        <a class="archive-link" href="../halloween-horror-nights/">View Halloween tournament results <span aria-hidden="true">↗</span></a>
+      </div>
+      <section class="signup-card" id="signup" aria-labelledby="signup-heading">
+        <div class="card-heading"><span>PLAYER REGISTRATION</span><span>01 / ENTER</span></div>
+        <h2 id="signup-heading">Claim your spot.</h2>
+        <p class="card-intro">One signup. Your position. Your verified Discord.</p>
+        <form method="post" action="https://gfa-discord-bot-production.up.railway.app/signup/start" id="signup-form">
+          <input type="hidden" name="event_key" value="turkey-bowl-2026-11-20">
+          <div class="field"><label for="player-name">Player name <span>REQUIRED</span></label><input id="player-name" name="name" type="text" maxlength="64" autocomplete="nickname" placeholder="The name you play under" required></div>
+          <fieldset class="position-field"><legend>Choose your position <span>SELECT ONE</span></legend><div class="position-options">
+            <label><input type="radio" name="position" value="QB" required><span><strong>QB</strong><small>Quarterback</small></span></label>
+            <label><input type="radio" name="position" value="WR"><span><strong>WR</strong><small>Wide receiver</small></span></label>
+            <label><input type="radio" name="position" value="LINE"><span><strong>LINE</strong><small>Line</small></span></label>
+            <label><input type="radio" name="position" value="FLEX"><span><strong>FLEX</strong><small>Flexible</small></span></label>
+          </div></fieldset>
+          <div class="field"><label for="discord-name">Discord username <span>REQUIRED</span></label><input id="discord-name" name="discord_name" type="text" maxlength="64" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Your Discord username" required><p class="field-note">You’ll connect Discord next to verify your account.</p></div>
+          <label class="consent"><input type="checkbox" name="consent" value="yes" required><span>I agree to verify my Discord, join the GFA server, and receive the Tournament role.</span></label>
+          <button type="submit" id="connect-discord"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.7 4.7a18 18 0 0 0-4.3-1.4l-.5 1a16 16 0 0 0-5.8 0l-.5-1a18 18 0 0 0-4.3 1.4C1.6 8.7.8 12.6 1.2 16.5a18 18 0 0 0 5.3 2.7l1.1-1.8-1.7-.8.4-.3a13 13 0 0 0 11.4 0l.4.3-1.7.8 1.1 1.8a18 18 0 0 0 5.3-2.7c.5-4.5-.8-8.4-3.1-11.8ZM8.4 14.3c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Zm7.2 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Z"/></svg><span>CONNECT DISCORD & CONTINUE</span><span aria-hidden="true">↗</span></button>
+          <p id="signup-status" class="signup-status" role="status" aria-live="polite">Connect Discord, then confirm your entry on the next screen.</p>
+        </form>
+        <div class="next-steps"><h3>WHAT HAPPENS NEXT</h3><ol><li><span>01</span><div><strong>Verify your Discord</strong><p>Connect the account you use in GFA.</p></div></li><li><span>02</span><div><strong>Confirm your entry</strong><p>Review your name and position, then finish signup.</p></div></li><li><span>03</span><div><strong>You’re on the board</strong><p>Join the server and get the Tournament role.</p></div></li></ol></div>
+        <p class="privacy-note">Player signups are visible to GFA organizers only. Watch Discord for auction and tournament updates.</p>
+      </section>
+    </section>
+    <section class="bottom-strip" aria-label="Tournament details"><div><span>THE EVENT</span><strong>Turkey Bowl Auction Tournament</strong></div><div><span>THE DATE</span><strong>November 20, 2026</strong></div><div><span>THE POSITIONS</span><strong>QB / WR / LINE / FLEX</strong></div></section>
+  </main>
+  <footer><a href="../#home">GFA / GRIDIRON</a><span>A seat at the table. A shot at the title.</span><a href="https://gfa-discord-bot-production.up.railway.app/organizer">Organizer board <span aria-hidden="true">↗</span></a></footer>
+  <script src="../turkey-bowl.js?v=20261108"></script>
+</body>
+</html>

@@ -55,3 +55,6 @@
 .tourney-page .tourney-gallery .tourney-winner-art{border:0;box-shadow:none}
 @media(max-width:800px){.tourney-page .tourney-gallery{grid-template-columns:1fr;max-width:720px}}
 @media(max-width:600px){.tourney-page .tourney-gallery{margin:18px 15px 0;padding:6px;gap:8px}.tourney-page .tourney-art-card .tourney-eventline{min-height:0;font-size:9px;padding:10px}.tourney-page .tourney-gallery .tourney-winner-art,.tourney-page .tourney-leader-art{aspect-ratio:16/9}}
+
+/* Keep the extra signup link readable at tablet widths. */
+@media(min-width:701px) and (max-width:1200px){header{flex-wrap:wrap}header nav{order:3;width:100%;justify-content:space-between;gap:15px;overflow-x:auto}header nav a{white-space:nowrap;font-size:14px;padding:10px 0}.archive-link{display:none}}

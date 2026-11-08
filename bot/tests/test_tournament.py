@@ -14,7 +14,7 @@ import aiohttp
 from aiohttp.test_utils import TestClient, TestServer
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tournament import TournamentServer
+from tournament import TournamentServer, EVENT, HALLOWEEN_EVENT
 
 
 class FakeResponse:
@@ -257,9 +257,9 @@ class TournamentFlowTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_manual_players_stay_private_and_are_not_discord_verified(self):
         with sqlite3.connect(self.server.db_path) as db:
-            db.executemany("INSERT INTO manual_registrations (event_key,name,position) VALUES (?,?,?)",
-                           [("halloween-2026-10-24", "Dootmean", "WR"),
-                            ("halloween-2026-10-24", "Itachi", "WR")])
+            db.executemany("INSERT INTO turkey_bowl_manual_registrations (event_key,name,position) VALUES (?,?,?)",
+                           [(EVENT, "Dootmean", "WR"),
+                            (EVENT, "Itachi", "WR")])
         self.assertEqual((await self.browser.get("/organizer/roster.csv")).status, 401)
         self.server.admin_ids.add(self.server.client.user["id"])
         await self.verify()
@@ -318,47 +318,77 @@ class TournamentFlowTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.headers["Access-Control-Allow-Origin"], "https://officialgfa.com")
         self.assertEqual(response.headers["Cache-Control"], "no-store")
         body = await response.json()
-        self.assertEqual(set(body), {"ready", "registration_open", "date"})
-        self.assertEqual(body["date"], "2026-10-24")
+        self.assertEqual(set(body), {"ready", "registration_open", "date", "event_key", "positions"})
+        self.assertEqual(body["date"], "2026-11-20")
+        self.assertEqual(body["event_key"], EVENT)
+        self.assertEqual(body["positions"], ["QB", "WR", "LINE", "FLEX"])
 
     async def test_only_supported_positions_can_complete_signup(self):
-        for entered, expected in [("WR", "WR"), ("LINE", "LINE"), ("Flex", "FLEX")]:
+        for entered, expected in [("QB", "QB"), ("WR", "WR"), ("LINE", "LINE"), ("Flex", "FLEX")]:
             with self.subTest(position=entered):
                 session = await self.verify(position=entered)
                 self.assertEqual((await self.submit(session)).status, 200)
                 self.assertEqual(self.server.roster()[0]["position"], expected)
 
-    async def test_qb_signups_are_closed_and_existing_qbs_remain(self):
-        self.server.save_registration({"draft": {"name": "Existing QB", "position": "QB", "discord_name": "existing_qb"},
-                                       "user": {"id": "777", "username": "existing_qb"}}, "confirmed")
+    async def test_turkey_registration_does_not_change_halloween_records(self):
+        uid = self.server.client.user["id"]
         with sqlite3.connect(self.server.db_path) as db:
+            db.execute("""INSERT INTO registrations
+                (event_key,discord_id,name,position,entered_discord_name,discord_username,
+                 discord_display_name,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)""",
+                (HALLOWEEN_EVENT, uid, "October player", "WR", "old_user", "old_user",
+                 "Old Player", "confirmed", "2026-10-15 10:00:00", "2026-10-15 10:00:00"))
             db.execute("INSERT INTO manual_registrations (event_key,name,position) VALUES (?,?,?)",
-                       ("halloween-2026-10-24", "Organizer QB", "QB"))
-        before = self.server.roster()
-        for position in ["QB", "qb", " Qb "]:
-            response = await self.browser.post("/signup/start", data={"name": "New QB", "position": position, "discord_name": "new_qb", "consent": "yes"}, allow_redirects=False)
-            self.assertEqual(response.status, 409)
-            self.assertIn("QB signups are full", await response.text())
-            self.assertNotIn("Location", response.headers)
-        self.assertEqual(self.server.sessions, {})
-        self.assertEqual(self.server.roster(), before)
-        self.server.admin_ids.add(self.server.client.user["id"])
-        await self.verify()
+                       (HALLOWEEN_EVENT, "October manual", "LINE"))
+        before = self.server.roster(HALLOWEEN_EVENT)
+        self.assertEqual(self.server.roster(), [])
+        session = await self.verify(name="November player", position="QB")
+        self.assertEqual((await self.submit(session)).status, 200)
+        self.assertEqual([row["name"] for row in self.server.roster()], ["November player"])
+        self.assertEqual(self.server.roster(HALLOWEEN_EVENT), before)
+        self.server.admin_ids.add(uid)
         response = await self.browser.get("/organizer")
-        qb_group = (await response.text()).split('id="position-QB"', 1)[1].split('</section>', 1)[0]
-        self.assertIn("Existing QB", qb_group)
-        self.assertIn("Organizer QB", qb_group)
-        self.assertEqual(self.server.roster(), before)
+        body = await response.text()
+        self.assertIn("November player", body)
+        self.assertNotIn("October player", body)
+        self.assertIn("TURKEY BOWL AUCTION TOURNAMENT", body)
+        response = await self.browser.get("/organizer", params={"event": HALLOWEEN_EVENT})
+        body = await response.text()
+        self.assertIn("October player", body)
+        self.assertIn("October manual", body)
+        self.assertNotIn("November player", body)
+        self.assertIn("HALLOWEEN HORROR NIGHTS TOURNEY", body)
+        for key, present, absent, filename in [
+            (EVENT, "November player", "October player", "gfa-turkey-bowl-2026-signups.csv"),
+            (HALLOWEEN_EVENT, "October player", "November player", "gfa-halloween-2026-signups.csv")]:
+            response = await self.browser.get("/organizer/roster.csv", params={"event": key})
+            body = await response.text()
+            self.assertIn(present, body)
+            self.assertNotIn(absent, body)
+            self.assertIn(filename, response.headers["Content-Disposition"])
 
-    async def test_old_qb_draft_cannot_complete_signup(self):
+    async def test_closed_halloween_form_cannot_start_verification(self):
+        response = await self.browser.post("/signup/start", data={"name": "October", "position": "WR",
+            "discord_name": "old", "consent": "yes", "event_key": HALLOWEEN_EVENT}, allow_redirects=False)
+        self.assertEqual(response.status, 409)
+        self.assertNotIn("Location", response.headers)
+        self.assertEqual(self.server.sessions, {})
+
+    async def test_old_event_session_cannot_complete_signup(self):
         session = await self.verify()
-        session["draft"]["position"] = "QB"
+        session["event_key"] = HALLOWEEN_EVENT
         response = await self.submit(session)
         self.assertEqual(response.status, 409)
-        self.assertIn("QB signups are full", await response.text())
         self.assertEqual(self.server.roster(), [])
         self.assertEqual(self.server.client.joins, [])
-        self.assertEqual(self.server.guild.member.add_count, 0)
+
+    async def test_unknown_event_cannot_select_arbitrary_tables(self):
+        self.server.admin_ids.add(self.server.client.user["id"])
+        await self.verify()
+        for route in ["/organizer", "/organizer/roster.csv"]:
+            response = await self.browser.get(route, params={"event": "registrations; DROP TABLE registrations"})
+            self.assertEqual(response.status, 400)
+        self.assertEqual(self.server.roster(HALLOWEEN_EVENT), [])
 
     async def test_unsupported_positions_cannot_start_verification(self):
         for position in ["RB", "DB", "OL", "DL", "WR / DB", "anything"]:
