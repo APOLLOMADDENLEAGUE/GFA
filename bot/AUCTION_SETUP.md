@@ -8,8 +8,8 @@ The existing GFA bot serves `/auction/captain`, `/auction/host`, and the public 
 2. QBs open `/auction/captain`, connect Discord, choose their captain slot, and request access. Approve their requests under **Captain access & room settings**.
 3. Check the board sync indicator and QB order. Press **Start auction** when ready.
 4. The current QB nominates a player with an opening bid, or tells the host who submits it. Captains can enter any whole multiple of $10 within their remaining budget. The host can enter proxy bids.
-5. Use **Going once**, **Going twice**, **Final call**, then **SOLD**. A new bid resets the calls. Selling deducts the price, fills a roster slot, marks the player taken, and advances to the next QB in board order. Each team has six draft slots.
-6. Use `/auction/stream` as a 1920×1080 OBS browser source. Sound is off until enabled. Stream view exposes no private captain-access information.
+5. Use **Going once**, **Going twice**, **Going three times**, then **SOLD**. A new bid resets the calls. Selling deducts the price, fills a roster slot, marks the player taken, and advances to the next QB in board order. Each team has six draft slots.
+6. Use `/auction/stream` as a 1920×1080 OBS browser source. Sound is off until enabled. Stream view exposes no private captain-access information. Its team cards summarize budgets and draft counts; click a captain character to inspect the complete roster. The host and captain views also keep the full roster cards.
 
 ## Google board sync
 
@@ -34,3 +34,7 @@ Auction state and captain approvals persist in the existing volume database as n
 Add `?demo=1` to any auction view for browser-local practice. This uses separate local storage and never posts to the live auction API. Practice state can be shared between tabs in the same browser; separate devices do not share practice bids. Reset practice has no effect on the live room.
 
 Run `python -m unittest discover -s bot/tests -v` and `node --check bot/auction_assets/app.js`. Tests cover the signup regression suite, auction identity/authorization, bid amounts, stale sales, concurrent bids, board reconciliation, persistent state and Discord OAuth scope.
+
+## Broadcast effects
+
+New nominations reveal the player in the center. Each QB has an animated football character and a sign showing their latest bid on the current player. A new bid raises that captain's sign; the leader stays highlighted. Clicking a character opens the captain's team details. Host calls show **Going once**, **Going twice**, and **Going three times** at the top. New bids clear the call display. **SOLD** triggers falling cash, streamers, and a pulsing SOLD stamp. Effects and sound have separate controls; sound starts off. Reduced-motion preferences remove the movement. Practice view includes local-only preview buttons for reveals, bids, calls, and the sale celebration.

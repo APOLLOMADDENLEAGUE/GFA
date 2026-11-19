@@ -39,6 +39,12 @@ class AuctionRulesTests(unittest.TestCase):
         self.open_lot()
         self.do("bid", {"captainId": self.state["captains"][1]["id"]}, amount=370, lotId=self.state["lot"]["id"])
         self.assertEqual(self.state["lot"]["amount"], 370)
+        self.assertEqual(self.state["lot"]["bids"], {
+            self.state["captains"][0]["id"]: 10, self.state["captains"][1]["id"]: 370})
+        self.do("bid", {"captainId": self.state["captains"][2]["id"]}, amount=400, lotId=self.state["lot"]["id"])
+        self.do("bid", {"captainId": self.state["captains"][1]["id"]}, amount=450, lotId=self.state["lot"]["id"])
+        self.assertEqual(self.state["lot"]["bids"][self.state["captains"][1]["id"]], 450)
+        self.assertEqual(self.state["lot"]["bids"][self.state["captains"][2]["id"]], 400)
 
     def test_invalid_amounts_and_over_budget_rejected(self):
         self.open_lot()
@@ -51,6 +57,22 @@ class AuctionRulesTests(unittest.TestCase):
         with self.assertRaises(AuctionError):
             self.do("nominate", {"captainId": self.state["captains"][1]["id"]}, playerId=self.state["players"][0]["id"], amount=10)
         self.do("nominate", {"captainId": self.state["captains"][0]["id"]}, playerId=self.state["players"][0]["id"], amount=10)
+
+    def test_nomination_requires_explicit_starting_amount(self):
+        self.do("start")
+        for amount in (None, "", 0, 15):
+            with self.subTest(amount=amount), self.assertRaises(AuctionError):
+                self.do("nominate", playerId=self.state["players"][0]["id"], amount=amount)
+
+    def test_nomination_order_wraps_to_first_and_repeats_forward(self):
+        self.do("start")
+        observed = []
+        for i in range(14):
+            observed.append(self.state["captains"][self.state["turn"]]["name"])
+            self.do("nominate", playerId=self.state["players"][i]["id"], amount=10)
+            self.do("sold", lotId=self.state["lot"]["id"])
+        expected = [c["name"] for c in self.seed["captains"]]
+        self.assertEqual(observed, expected + expected[:2])
 
     def test_captain_cannot_spoof_bidder_or_sell(self):
         self.open_lot()

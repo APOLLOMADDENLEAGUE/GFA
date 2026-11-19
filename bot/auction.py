@@ -210,7 +210,7 @@ def apply_action(state, action, actor):
         player["status"] = "nominated"
         state["lot"] = {"id": secrets.token_hex(12), "playerId": player["id"],
                         "nominatorId": captain["id"], "amount": amount,
-                        "leaderId": captain["id"], "call": 0, "openedAt": now()}
+                        "leaderId": captain["id"], "bids": {captain["id"]: amount}, "call": 0, "openedAt": now()}
         state["phase"] = "bidding"
         add_event(state, "nomination", f"{captain['name']} nominates {player['name']} for \u0024{amount}.",
                   playerId=player["id"], captainId=captain["id"], amount=amount)
@@ -232,13 +232,14 @@ def apply_action(state, action, actor):
         if amount > captain["budget"]:
             raise AuctionError("That bid exceeds your remaining budget.")
         lot.update(amount=amount, leaderId=captain["id"], call=0)
+        lot.setdefault("bids", {})[captain["id"]] = amount
         add_event(state, "bid", f"{captain['name']} bids \u0024{amount}.",
                   captainId=captain["id"], playerId=lot["playerId"], amount=amount)
     elif kind == "call":
         if not state["lot"] or state["phase"] != "bidding":
             raise AuctionError("There is no active player.", 409)
         state["lot"]["call"] = min(3, state["lot"]["call"] + 1)
-        text = ["", "Going once.", "Going twice.", "Final call."][state["lot"]["call"]]
+        text = ["", "Going once.", "Going twice.", "Going three times."][state["lot"]["call"]]
         add_event(state, "call", text)
     elif kind == "sold":
         lot = state["lot"]
