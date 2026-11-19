@@ -172,12 +172,22 @@ def apply_action(state, action, actor):
     """Pure state transition; the store serializes and commits it atomically."""
     kind = action.get("type")
     host = actor.get("host", False)
-    if kind in {"start", "pause", "turn", "call", "sold", "pass", "undo"}:
+    if kind in {"start", "reset", "pause", "turn", "call", "sold", "pass", "undo"}:
         if not host:
             raise AuctionError("Only the host can use this control.", 403)
         if action.get("revision") != state["revision"]:
             raise AuctionError("The room changed. Review the latest bid and try again.", 409)
-    if kind == "start":
+    if kind == "reset":
+        if action.get("confirmation") != "RESET":
+            raise AuctionError("Confirm Reset Draft before clearing the picks.")
+        seed = {"title": state["title"], "date": state["date"],
+                "captains": [{"id": c["id"], "name": c["name"], "budget": c["startingBudget"]} for c in state["captains"]],
+                "players": [{"id": p["id"], "name": p["name"], "position": p["position"]} for p in state["players"] if p.get("onBoard", True)]}
+        revision = state["revision"]
+        state.clear()
+        state.update(fresh_state(seed), revision=revision)
+        add_event(state, "reset", "Draft reset. Budgets restored; waiting for Start Draft.")
+    elif kind == "start":
         if state["phase"] != "setup":
             raise AuctionError("The auction has already started.", 409)
         state["phase"] = "nominating"
@@ -222,7 +232,7 @@ def apply_action(state, action, actor):
             raise AuctionError("That player's auction has ended.", 409)
         captain_id = action.get("captainId") if host else actor.get("captainId")
         if not captain_id:
-            raise AuctionError("Connect Discord and get your captain slot approved to bid.", 403)
+            raise AuctionError("Open your private captain link to bid.", 403)
         captain = captain_for(state, captain_id)
         if len(captain["roster"]) >= state["slots"]:
             raise AuctionError("Your six-player roster is full.")
@@ -306,8 +316,93 @@ class AuctionStore:
                  created_at INTEGER NOT NULL, PRIMARY KEY(event_key,discord_id))""")
             db.execute("""CREATE UNIQUE INDEX IF NOT EXISTS gfa_auction_approved_captain
                 ON gfa_auction_claims(event_key,captain_id) WHERE approved=1""")
+            db.execute("""CREATE TABLE IF NOT EXISTS gfa_auction_links
+                (event_key TEXT NOT NULL, captain_id TEXT NOT NULL, token TEXT NOT NULL,
+                 token_hash TEXT NOT NULL UNIQUE, created_at INTEGER NOT NULL,
+                 PRIMARY KEY(event_key,captain_id))""")
+            db.execute("""CREATE TABLE IF NOT EXISTS gfa_auction_access
+                (session_hash TEXT PRIMARY KEY, event_key TEXT NOT NULL, captain_id TEXT NOT NULL,
+                 link_hash TEXT NOT NULL, csrf TEXT NOT NULL, expires INTEGER NOT NULL)""")
+            db.execute("""CREATE TABLE IF NOT EXISTS gfa_auction_reset_backups
+                (id INTEGER PRIMARY KEY AUTOINCREMENT, event_key TEXT NOT NULL,
+                 created_at INTEGER NOT NULL, payload TEXT NOT NULL)""")
             db.execute("INSERT OR IGNORE INTO gfa_auction_state VALUES (?,?,?)",
                        (EVENT, 0, json.dumps(fresh_state(self.seed))))
+            state = json.loads(db.execute("SELECT payload FROM gfa_auction_state WHERE event_key=?", (EVENT,)).fetchone()[0])
+            self.ensure_links(db, state)
+            db.execute("DELETE FROM gfa_auction_access WHERE expires<?", (int(time.time()),))
+
+    def ensure_links(self, db, state):
+        for c in state["captains"]:
+            token = secrets.token_urlsafe(32)
+            db.execute("INSERT OR IGNORE INTO gfa_auction_links VALUES (?,?,?,?,?)",
+                       (EVENT, c["id"], token, hashlib.sha256(token.encode()).hexdigest(), now()))
+
+    def links(self):
+        with closing(self.connect()) as db:
+            return [{"captainId": r["captain_id"], "token": r["token"]} for r in db.execute(
+                "SELECT captain_id,token FROM gfa_auction_links WHERE event_key=?", (EVENT,))]
+
+    def rotate_link(self, captain_id):
+        captain_for(self.state(), captain_id)
+        token = secrets.token_urlsafe(32)
+        with closing(self.connect()) as db, db:
+            db.execute("BEGIN IMMEDIATE")
+            db.execute("UPDATE gfa_auction_links SET token=?,token_hash=?,created_at=? WHERE event_key=? AND captain_id=?",
+                       (token, hashlib.sha256(token.encode()).hexdigest(), now(), EVENT, captain_id))
+            db.execute("DELETE FROM gfa_auction_access WHERE event_key=? AND captain_id=?", (EVENT, captain_id))
+
+    def redeem(self, token):
+        if not isinstance(token, str) or not 30 <= len(token) <= 100:
+            raise AuctionError("This private link is invalid or has been replaced. Ask the host for your latest link.", 401)
+        digest = hashlib.sha256(token.encode()).hexdigest()
+        with closing(self.connect()) as db, db:
+            link = db.execute("SELECT * FROM gfa_auction_links WHERE event_key=? AND token_hash=?", (EVENT, digest)).fetchone()
+            if not link or not secrets.compare_digest(link["token"], token):
+                raise AuctionError("This private link is invalid or has been replaced. Ask the host for your latest link.", 401)
+            captain_for(self.state(), link["captain_id"])
+            raw, csrf = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
+            db.execute("INSERT INTO gfa_auction_access VALUES (?,?,?,?,?,?)",
+                       (hashlib.sha256(raw.encode()).hexdigest(), EVENT, link["captain_id"], digest, csrf, int(time.time()) + 30 * 86400))
+            return raw
+
+    def access_session(self, raw):
+        if not isinstance(raw, str) or not 30 <= len(raw) <= 100:
+            return None
+        with closing(self.connect()) as db:
+            row = db.execute("""SELECT a.* FROM gfa_auction_access a JOIN gfa_auction_links l
+                ON a.event_key=l.event_key AND a.captain_id=l.captain_id AND a.link_hash=l.token_hash
+                WHERE a.session_hash=? AND a.event_key=? AND a.expires>?""",
+                             (hashlib.sha256(raw.encode()).hexdigest(), EVENT, int(time.time()))).fetchone()
+            if not row:
+                return None
+            c = next((c for c in self.state()["captains"] if c["id"] == row["captain_id"]), None)
+            if not c:
+                return None
+            return {"csrf": row["csrf"], "access": "link", "captainId": c["id"],
+                    "user": {"id": "invite:" + c["id"], "username": c["name"]}}
+
+    def has_reset_backup(self):
+        with closing(self.connect()) as db:
+            return db.execute("SELECT 1 FROM gfa_auction_reset_backups WHERE event_key=? LIMIT 1", (EVENT,)).fetchone() is not None
+
+    def restore_reset(self, revision):
+        with closing(self.connect()) as db, db:
+            db.execute("BEGIN IMMEDIATE")
+            state = json.loads(db.execute("SELECT payload FROM gfa_auction_state WHERE event_key=?", (EVENT,)).fetchone()[0])
+            if state["revision"] != revision or state["phase"] != "setup" or state["sales"]:
+                raise AuctionError("Restore a reset before starting another draft.", 409)
+            row = db.execute("SELECT * FROM gfa_auction_reset_backups WHERE event_key=? ORDER BY id DESC LIMIT 1", (EVENT,)).fetchone()
+            if not row:
+                raise AuctionError("There is no reset to restore.", 409)
+            restored = json.loads(row["payload"])
+            if {c["id"] for c in restored["captains"]} != {c["id"] for c in state["captains"]}:
+                raise AuctionError("Restore the previous QB names on the board before restoring this draft.", 409)
+            restored["revision"] = state["revision"] + 1
+            add_event(restored, "restore", "The draft before the last reset was restored.")
+            db.execute("UPDATE gfa_auction_state SET revision=?,payload=? WHERE event_key=?", (restored["revision"], json.dumps(restored), EVENT))
+            db.execute("DELETE FROM gfa_auction_reset_backups WHERE id=?", (row["id"],))
+            return restored
 
     def state(self):
         with closing(self.connect()) as db:
@@ -319,7 +414,11 @@ class AuctionStore:
             db.execute("BEGIN IMMEDIATE")
             state = json.loads(db.execute("SELECT payload FROM gfa_auction_state WHERE event_key=?",
                                           (EVENT,)).fetchone()[0])
+            before = copy.deepcopy(state) if action.get("type") == "reset" else None
             state = apply_action(state, action, actor)
+            if before is not None:
+                db.execute("INSERT INTO gfa_auction_reset_backups(event_key,created_at,payload) VALUES (?,?,?)", (EVENT, now(), json.dumps(before)))
+                db.execute("DELETE FROM gfa_auction_reset_backups WHERE event_key=? AND id NOT IN (SELECT id FROM gfa_auction_reset_backups WHERE event_key=? ORDER BY id DESC LIMIT 10)", (EVENT, EVENT))
             db.execute("UPDATE gfa_auction_state SET revision=?,payload=? WHERE event_key=?",
                        (state["revision"], json.dumps(state), EVENT))
             return state
@@ -381,6 +480,9 @@ class AuctionStore:
                            (updated["revision"], json.dumps(updated), EVENT))
                 valid = [c["id"] for c in updated["captains"]]
                 db.execute("DELETE FROM gfa_auction_claims WHERE event_key=? AND captain_id NOT IN (%s)" % ",".join("?" * len(valid)), (EVENT, *valid))
+                db.execute("DELETE FROM gfa_auction_links WHERE event_key=? AND captain_id NOT IN (%s)" % ",".join("?" * len(valid)), (EVENT, *valid))
+                db.execute("DELETE FROM gfa_auction_access WHERE event_key=? AND captain_id NOT IN (%s)" % ",".join("?" * len(valid)), (EVENT, *valid))
+                self.ensure_links(db, updated)
             return updated
 
 
@@ -391,16 +493,41 @@ class AuctionServer:
         self.store.initialize()
         self.lock = asyncio.Lock()
         self.sockets = set()
+        self.socket_captains = {}
+        self.last_seen = {}
+        self.closing = False
         self.rates = {}
         self.sync_status = {"lastSuccess": None, "error": None, "interval": 15}
         self.sync_task = None
         self.sync_lock = asyncio.Lock()
 
     def snapshot(self, state=None):
-        return {**(state or self.store.state()), "boardSync": dict(self.sync_status)}
+        state = state or self.store.state()
+        active = {captain_id for ws, captain_id in self.socket_captains.items() if not ws.closed}
+        return {**state, "boardSync": dict(self.sync_status),
+                "presence": {c["id"]: {"online": c["id"] in active, "lastSeen": self.last_seen.get(c["id"])} for c in state["captains"]}}
+
+    @property
+    def access_cookie(self):
+        return "__Host-gfa_auction_access" if self.t.secure else "gfa_auction_access"
+
+    def identity(self, request):
+        try:
+            discord_session = self.t.session(request, verified=True)
+        except FlowError:
+            discord_session = None
+        if discord_session and discord_session["user"]["id"] in self.t.admin_ids:
+            return {"host": True, "captainId": None}, discord_session
+        session = self.store.access_session(request.cookies.get(self.access_cookie, ""))
+        if session:
+            return {"host": False, "captainId": session["captainId"]}, session
+        if discord_session:
+            claim = self.store.claim(discord_session["user"])
+            return {"host": False, "captainId": claim["captain_id"] if claim and claim["approved"] else None}, discord_session
+        raise FlowError("Open your private captain link, or connect as the host.", 401)
 
     def actor(self, request):
-        session = self.t.session(request, verified=True)
+        actor, session = self.identity(request)
         self.t.check_csrf(session, request.headers.get("X-CSRF-Token"))
         origin = request.headers.get("Origin", "")
         if origin and origin != self.t.public_origin:
@@ -411,16 +538,14 @@ class AuctionServer:
         if len(recent) >= 10:
             raise AuctionError("Please wait a moment before trying again.", 429)
         self.rates[uid] = [*recent, time.monotonic()]
-        claim = self.store.claim(session["user"])
-        return {"host": uid in self.t.admin_ids,
-                "captainId": claim["captain_id"] if claim and claim["approved"] else None}, session
+        return actor, session
 
     async def page(self, request):
         return web.Response(text=(ASSETS / "index.html").read_text(), content_type="text/html")
 
     async def asset(self, request):
         name = request.match_info["filename"]
-        types = {"app.js": "application/javascript", "style.css": "text/css"}
+        types = {"app.js": "application/javascript", "music.js": "application/javascript", "style.css": "text/css"}
         if name not in types:
             raise web.HTTPNotFound()
         return web.Response(body=(ASSETS / name).read_bytes(), content_type=types[name])
@@ -436,18 +561,45 @@ class AuctionServer:
 
     async def me(self, request):
         try:
-            session = self.t.session(request, verified=True)
+            actor, session = self.identity(request)
         except FlowError:
             return web.json_response({"role": "viewer"})
         user = session["user"]
-        claim = self.store.claim(user)
-        host = user["id"] in self.t.admin_ids
+        claim = self.store.claim(user) if session.get("access") != "link" else None
+        host = actor["host"]
         result = {"role": "host" if host else "captain" if claim and claim["approved"] else "pending" if claim else "unassigned",
                   "name": user.get("global_name") or user["username"], "csrf": session["csrf"],
-                  "captainId": claim["captain_id"] if claim else None}
+                  "captainId": actor["captainId"] or (claim["captain_id"] if claim else None)}
+        if session.get("access") == "link":
+            result.update(role="captain", access="private-link")
         if host:
             result["requests"] = self.store.requests()
+            result["captainLinks"] = [{"captainId": link["captainId"], "url": self.t.public_origin + "/auction/captain#key=" + link["token"]} for link in self.store.links()]
+            result["hasResetBackup"] = self.store.has_reset_backup()
         return web.json_response(result)
+
+    async def enter(self, request):
+        try:
+            if request.headers.get("Origin") != self.t.public_origin or request.content_type != "application/json":
+                raise AuctionError("Open your private link directly from GFA.", 403)
+            payload = await request.json()
+            if not isinstance(payload, dict):
+                raise AuctionError("Invalid private link.", 400)
+            key = "enter:" + str(request.remote)
+            recent = [v for v in self.rates.get(key, []) if time.monotonic() - v < 10]
+            if len(recent) >= 20:
+                raise AuctionError("Please wait a moment and open your link again.", 429)
+            self.rates[key] = [*recent, time.monotonic()]
+            async with self.lock:
+                raw = self.store.redeem(payload.get("key"))
+            response = web.json_response({"ok": True})
+            response.set_cookie(self.access_cookie, raw, max_age=30 * 86400,
+                                secure=self.t.secure, httponly=True, samesite="Lax", path="/")
+            return response
+        except AuctionError as error:
+            return web.json_response({"error": error.message}, status=error.status)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return web.json_response({"error": "Invalid private link."}, status=400)
 
     async def action(self, request):
         try:
@@ -462,14 +614,31 @@ class AuctionServer:
                 return web.json_response(self.snapshot(state))
             async with self.lock:
                 if payload.get("type") == "claim":
+                    if session.get("access") == "link":
+                        raise AuctionError("Your private link already assigns your QB slot.", 403)
                     self.store.request_captain(session["user"], payload.get("captainId"))
                     return web.json_response({"ok": True})
+                if payload.get("type") == "rotate_link":
+                    if not actor["host"]:
+                        raise AuctionError("Only the host can replace captain links.", 403)
+                    self.store.rotate_link(payload.get("captainId"))
+                    for ws, captain_id in tuple(self.socket_captains.items()):
+                        if captain_id == payload.get("captainId"):
+                            await ws.close(code=4001, message=b"Captain link replaced")
+                    return web.json_response({"ok": True})
+                if payload.get("type") == "restore_reset":
+                    if not actor["host"]:
+                        raise AuctionError("Only the host can restore a draft.", 403)
+                    state = self.store.restore_reset(payload.get("revision"))
+                else:
+                    state = None
                 if payload.get("type") in {"approve", "revoke"}:
                     if not actor["host"]:
                         raise AuctionError("Only the host can approve captain slots.", 403)
                     self.store.approve(str(payload.get("discordId", "")), payload["type"] == "revoke")
                     return web.json_response({"ok": True})
-                state = self.store.mutate(payload, actor)
+                if state is None:
+                    state = self.store.mutate(payload, actor)
             await self.broadcast(state)
             return web.json_response(self.snapshot(state))
         except (AuctionError, FlowError) as error:
@@ -519,11 +688,27 @@ class AuctionServer:
         await ws.prepare(request)
         self.sockets.add(ws)
         try:
-            await ws.send_json(self.snapshot())
+            actor, _ = self.identity(request)
+            captain_id = actor["captainId"]
+        except FlowError:
+            captain_id = None
+        if captain_id:
+            self.socket_captains[ws] = captain_id
+            self.last_seen[captain_id] = now()
+        try:
+            if captain_id:
+                await self.broadcast(self.store.state())
+            else:
+                await ws.send_json(self.snapshot())
             async for message in ws:
                 pass
         finally:
             self.sockets.discard(ws)
+            self.socket_captains.pop(ws, None)
+            if captain_id:
+                self.last_seen[captain_id] = now()
+                if not self.closing:
+                    await self.broadcast(self.store.state())
         return ws
 
     async def broadcast(self, state):
@@ -553,6 +738,7 @@ class AuctionServer:
                             headers={"Content-Disposition": 'attachment; filename="gfa-turkey-bowl-auction.csv"'})
 
     async def close(self, app):
+        self.closing = True
         if self.sync_task:
             self.sync_task.cancel()
             await asyncio.gather(self.sync_task, return_exceptions=True)
@@ -567,6 +753,7 @@ class AuctionServer:
             web.get("/auction/login", self.login),
             web.get("/auction/assets/{filename}", self.asset),
             web.get("/auction/api/state", self.state), web.get("/auction/api/me", self.me),
+            web.post("/auction/api/enter", self.enter),
             web.post("/auction/api/action", self.action),
             web.get("/auction/live", self.websocket),
             web.get("/auction/export.csv", self.export),

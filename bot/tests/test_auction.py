@@ -197,6 +197,42 @@ class AuctionRulesTests(unittest.TestCase):
             self.assertEqual(store.state()["revision"],revision)
             self.assertEqual(AuctionStore(store.path,self.seed).state(),store.state())
 
+    def test_private_links_persist_and_replacement_revokes_old_sessions(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store=AuctionStore(Path(folder)/'auction.sqlite',self.seed);store.initialize()
+            links=store.links();self.assertEqual(len(links),12)
+            self.assertEqual(len({l['token'] for l in links}),12)
+            raw=store.redeem(links[0]['token'])
+            self.assertEqual(store.access_session(raw)['captainId'],links[0]['captainId'])
+            reopened=AuctionStore(store.path,self.seed);reopened.initialize()
+            self.assertEqual(reopened.links(),links)
+            self.assertIsNotNone(reopened.access_session(raw))
+            reopened.rotate_link(links[0]['captainId'])
+            self.assertIsNone(reopened.access_session(raw))
+            with self.assertRaises(AuctionError):reopened.redeem(links[0]['token'])
+            self.assertEqual(len(reopened.links()),12)
+
+    def test_reset_restores_budgets_and_pool_preserves_links_and_can_be_undone(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store=AuctionStore(Path(folder)/'auction.sqlite',self.seed);store.initialize()
+            links=store.links();raw=store.redeem(links[0]['token']);s=store.state()
+            store.mutate({'type':'start','revision':s['revision']},HOST)
+            s=store.mutate({'type':'nominate','playerId':s['players'][0]['id'],'amount':100},HOST)
+            s=store.mutate({'type':'sold','lotId':s['lot']['id'],'revision':s['revision']},HOST)
+            before=copy.deepcopy(s)
+            for action in [{'type':'reset','revision':s['revision']},{'type':'reset','revision':0,'confirmation':'RESET'}]:
+                with self.assertRaises(AuctionError):store.mutate(action,HOST)
+            s=store.mutate({'type':'reset','revision':s['revision'],'confirmation':'RESET'},HOST)
+            self.assertEqual(s['phase'],'setup');self.assertEqual(s['turn'],0);self.assertEqual(s['round'],1)
+            self.assertEqual(s['sales'],[]);self.assertIsNone(s['lot'])
+            self.assertTrue(all(c['budget']==c['startingBudget'] and not c['roster'] for c in s['captains']))
+            self.assertTrue(all(p['status']=='available' for p in s['players']))
+            self.assertEqual(store.links(),links);self.assertIsNotNone(store.access_session(raw))
+            self.assertTrue(store.has_reset_backup())
+            restored=store.restore_reset(s['revision'])
+            for key in ['sales','captains','players','turn','phase']:self.assertEqual(restored[key],before[key])
+            self.assertFalse(store.has_reset_backup())
+
 
 class AuctionAPITests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
@@ -269,6 +305,85 @@ class AuctionAPITests(unittest.IsolatedAsyncioTestCase):
         for path in ['/auction/captain','/auction/host','/auction/stream','/auction/assets/app.js','/auction/assets/style.css']:
             response=await self.browser.get(path);self.assertEqual(response.status,200)
             self.assertIn("script-src 'self'",response.headers['Content-Security-Policy'])
+
+    async def enter_link(self,index=0):
+        link=self.a.store.links()[index]
+        response=await self.browser.post('/auction/api/enter',json={'key':link['token']},headers={'Origin':self.t.public_origin})
+        self.assertEqual(response.status,200)
+        self.assertTrue(response.cookies[self.a.access_cookie]['httponly'])
+        self.assertEqual(response.cookies[self.a.access_cookie]['samesite'],'Lax')
+        return await (await self.browser.get('/auction/api/me')).json()
+
+    async def test_link_entry_assigns_one_captain_without_discord_and_keeps_host_controls_private(self):
+        me=await self.enter_link(1);self.assertEqual(me['role'],'captain');self.assertEqual(me['access'],'private-link')
+        self.assertEqual(me['captainId'],self.a.store.links()[1]['captainId'])
+        self.assertNotIn('captainLinks',me);self.assertEqual(self.t.sessions,{})
+        state=self.a.store.state()
+        for kind in ['start','reset','rotate_link','approve','restore_reset','sync']:
+            response=await self.post({'type':kind,'revision':state['revision'],'confirmation':'RESET','captainId':me['captainId']},csrf=me['csrf'])
+            self.assertEqual(response.status,403,kind)
+        self.assertEqual(self.a.store.state(),state)
+
+    async def test_links_only_appear_in_host_me_and_bad_links_origins_are_rejected(self):
+        links=self.a.store.links()
+        for path in ['/auction/api/state','/auction/api/me']:
+            text=await (await self.browser.get(path)).text()
+            self.assertTrue(all(l['token'] not in text for l in links))
+        for origin,key in [('https://bad.example',links[0]['token']),(self.t.public_origin,'invalid')]:
+            response=await self.browser.post('/auction/api/enter',json={'key':key},headers={'Origin':origin})
+            self.assertIn(response.status,[401,403])
+        self.login('host');me=await (await self.browser.get('/auction/api/me')).json()
+        self.assertEqual(len(me['captainLinks']),12)
+        self.assertTrue(all('#key=' in l['url'] for l in me['captainLinks']))
+
+    async def test_link_bid_is_bound_to_its_qb_and_resets_every_call(self):
+        self.a.store.mutate({'type':'start','revision':0},HOST)
+        s=self.a.store.state();s=self.a.store.mutate({'type':'nominate','playerId':s['players'][0]['id'],'amount':10},HOST)
+        me=await self.enter_link(1)
+        for count in range(1,4):
+            self.a.store.mutate({'type':'call','revision':self.a.store.state()['revision']},HOST)
+        response=await self.post({'type':'bid','lotId':s['lot']['id'],'captainId':s['captains'][4]['id'],'amount':100},csrf=me['csrf'])
+        self.assertEqual(response.status,200);s=await response.json()
+        self.assertEqual(s['lot']['leaderId'],me['captainId']);self.assertEqual(s['lot']['call'],0)
+        response=await self.post({'type':'bid','lotId':s['lot']['id'],'amount':110},csrf='wrong')
+        self.assertEqual(response.status,403)
+        self.a.store.mutate({'type':'call','revision':s['revision']},HOST)
+        self.assertEqual(self.a.store.state()['lot']['call'],1)
+
+    async def test_presence_wakes_only_authenticated_captain_and_sleeps_after_last_connection(self):
+        viewer=await self.browser.ws_connect('/auction/live',headers={'Origin':self.t.public_origin})
+        initial=await viewer.receive_json();self.assertTrue(all(not p['online'] for p in initial['presence'].values()))
+        me=await self.enter_link(0);cap=me['captainId']
+        first=await self.browser.ws_connect('/auction/live',headers={'Origin':self.t.public_origin})
+        self.assertTrue((await first.receive_json())['presence'][cap]['online'])
+        self.assertTrue((await viewer.receive_json())['presence'][cap]['online'])
+        second=await self.browser.ws_connect('/auction/live',headers={'Origin':self.t.public_origin})
+        self.assertTrue((await second.receive_json())['presence'][cap]['online'])
+        await first.close();await second.close()
+        final=await (await self.browser.get('/auction/api/state')).json()
+        self.assertFalse(final['presence'][cap]['online'])
+        self.assertIsNotNone(final['presence'][cap]['lastSeen'])
+        await viewer.close()
+
+    async def test_host_can_replace_private_link_but_old_cookie_loses_access(self):
+        link=self.a.store.links()[0];await self.enter_link(0)
+        self.login('host');response=await self.post({'type':'rotate_link','captainId':link['captainId']})
+        self.assertEqual(response.status,200)
+        self.browser.session.cookie_jar.clear()
+        response=await self.browser.post('/auction/api/enter',json={'key':link['token']},headers={'Origin':self.t.public_origin})
+        self.assertEqual(response.status,401)
+
+    async def test_replacing_link_disconnects_its_live_socket_and_removes_presence(self):
+        me=await self.enter_link(0);cap=me['captainId']
+        ws=await self.browser.ws_connect('/auction/live',headers={'Origin':self.t.public_origin})
+        self.assertTrue((await ws.receive_json())['presence'][cap]['online'])
+        self.login('host')
+        replacing=asyncio.create_task(self.post({'type':'rotate_link','captainId':cap}))
+        await ws.receive(timeout=3)
+        await ws.close()
+        self.assertEqual((await replacing).status,200)
+        state=await (await self.browser.get('/auction/api/state')).json()
+        self.assertFalse(state['presence'][cap]['online'])
 
 
 if __name__=='__main__':unittest.main()

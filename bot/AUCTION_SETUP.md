@@ -1,40 +1,56 @@
 # GFA Turkey Bowl live auction
 
-The existing GFA bot serves `/auction/captain`, `/auction/host`, and the public read-only `/auction/stream` on its Railway origin. `https://officialgfa.com/auction/` redirects into the draft room.
+The existing GFA bot serves `/auction/captain`, `/auction/host`, and the read-only `/auction/stream` on Railway. `https://officialgfa.com/auction/` opens the draft room.
 
 ## Run the draft
 
-1. Open `/auction/host` and connect with the existing GFA organizer Discord account.
-2. QBs open `/auction/captain`, connect Discord, choose their captain slot, and request access. Approve their requests under **Captain access & room settings**.
-3. Check the board sync indicator and QB order. Press **Start auction** when ready.
-4. The current QB nominates a player with an opening bid, or tells the host who submits it. Captains can enter any whole multiple of $10 within their remaining budget. The host can enter proxy bids.
-5. Use **Going once**, **Going twice**, **Going three times**, then **SOLD**. A new bid resets the calls. Selling deducts the price, fills a roster slot, marks the player taken, and advances to the next QB in board order. Each team has six draft slots.
-6. Use `/auction/stream` as a 1920×1080 OBS browser source. Sound is off until enabled. Stream view exposes no private captain-access information. Its team cards summarize budgets and draft counts; click a captain character to inspect the complete roster. The host and captain views also keep the full roster cards.
+1. Open the host desk and connect with the existing GFA organizer Discord account.
+2. In **Private captain links**, copy each QB's link and send it to that QB. **Copy all 12 links** copies the ordered list. Each link opens its assigned slot without Discord or approval.
+3. Check the Google board sync and QB order, then press **Start Draft**.
+4. The current QB selects a player and must enter a starting bid in $10 steps. They may tell the host instead. Every connected captain can bid during any call until **SOLD**, within their remaining budget and six-player roster limit.
+5. Host controls are **Going once**, **Going twice**, **Going three times**, and **SOLD**. Every valid new bid clears the call/banner; the next press starts at Going once again.
+6. A sale deducts money, fills the winning roster, marks the player taken and advances to the next nominator. The order repeats QB 1 through QB 12, then QB 1 again, skipping full teams. Each team drafts six players.
 
-## Google board sync
+The host can pause, submit proxy bids, pass a player, change the nomination turn, undo the last sale when no nomination is active, and export drafted teams at `/auction/export.csv`.
 
-The server checks the existing public Google draft board every 15 seconds while running. Google may briefly cache exports. The host also has **Sync board now**. The source remains the existing board, spreadsheet `1Jzr9S4IVFj0WbYha9ViQXHNiOswcpaT0KYRwuOkoh8I`, tab `1601740487`.
+## Reset and practice
 
-The sheet owns QB names and left-to-right nomination order, plus player names and positions. Existing captain identity is matched by name, so reordering QBs preserves approved access and current nomination identity. Sheet budget edits apply before the auction starts; after starting, remaining budgets come from the auction ledger.
+**Reset Draft** asks for confirmation, clears picks/bids, restores starting budgets and player availability, and returns to the lobby at QB 1. Captain links, sessions and assignments stay valid so a group can practice and reset before the real event.
 
-Player additions, removals and position changes sync during the auction. Removed available players stop appearing. If the currently nominated player is removed, their auction is canceled without deducting money and the same QB chooses another player. Completed picks and their original positions remain recorded even if removed from the sheet. Re-added completed picks remain taken. Replacing a QB who has drafted players or an active bid is rejected with a visible sync error; restore the QB before continuing. Invalid or unavailable exports keep the last valid roster and show the sync warning.
+Each reset saves the previous draft in the private database; ten backups are retained. **Undo reset** restores the previous draft while still in the lobby. A changed QB list must be restored on Google before recovering a backup with those QBs.
 
-The layout parser expects twelve QB name anchors C5,E5,…,Y5, budgets at the corresponding row-12 anchors, and WR/LINE/FLEX headers in C/K/S. Player anchors are C/F/H, K/N/P, S/V/X. Additional player rows are supported through row 500. Duplicate names are rejected. Keep the sheet shared as **Anyone with the link · Viewer**. The application reads the sheet; it does not write bids or picks back to Google.
+`?demo=1` runs local practice without posting to the live auction API. The host practice view has **Start Draft**, **Reset Draft**, and **Undo reset**. **Load sample** loads a sample auction; preview buttons demonstrate reveals, bids, calls and celebrations. Practice synchronizes tabs in one browser, not separate devices. A few practice characters start asleep; **Wake a QB** demonstrates presence without affecting real captains.
 
-## Authentication and storage
+## Stream and audio
 
-Uses the existing Discord OAuth application and registered `/auth/discord/callback`, with `identify` only for auction connections. No Discord message is sent and no guild-membership change is requested. The existing organizer allowlist controls host access. Captains cannot self-approve or bid as other QBs. CSRF and origin checks protect all changes; SQLite transactions serialize competing bids and stale lot/revision checks protect sales.
+Use `/auction/stream` as a 1920x1080 OBS browser source. All twelve team rosters, six slots each, stay visible above the characters alongside remaining budgets. Sales fill the rosters immediately. Click a character to inspect a team. The full pool and position filters remain available in the draft room.
 
-Auction state and captain approvals persist in the existing volume database as new `gfa_auction_state` and `gfa_auction_claims` tables. Existing registration tables remain separate. Signed-in browser sessions last up to eight hours and require reconnection after a server restart. Captain approvals and auction progress survive a restart. Only one bot replica should write to the mounted SQLite database.
+Nominations reveal the player in the center. QB signs display their latest bids and raise on new bids. Calls pop up at the top. SOLD brings falling cash, a pulsing stamp and a position highlight: a WR catch, a LINE block or sack, or a FLEX catch followed by a block. Effects and sound have separate controls; reduced-motion preferences remove movement.
 
-`/auction/export.csv` is organizer-only and downloads the recorded teams, prices and budgets. **Undo last sale** refunds the latest completed pick when no nomination is active. It does not clear the room or earlier picks.
+**Music** starts an original 92 BPM lounge instrumental synthesized locally with keys, bass and drums. Its volume slider is separate from sound effects. Music starts only after a click, and sound effects start off.
 
-## Practice and verification
+Characters sleep until an authenticated captain connects to the auction WebSocket, wake on connection, and sleep after the last connection closes. Multiple tabs/devices count as one online QB. Host-only sessions and spectators do not wake a captain. Interrupted phones may take a heartbeat cycle to disconnect. This measures connection to this room, not Discord status.
 
-Add `?demo=1` to any auction view for browser-local practice. This uses separate local storage and never posts to the live auction API. Practice state can be shared between tabs in the same browser; separate devices do not share practice bids. Reset practice has no effect on the live room.
+## Private links and authorization
 
-Run `python -m unittest discover -s bot/tests -v` and `node --check bot/auction_assets/app.js`. Tests cover the signup regression suite, auction identity/authorization, bid amounts, stale sales, concurrent bids, board reconciliation, persistent state and Discord OAuth scope.
+Only the authenticated host's `/auction/api/me` response supplies link URLs. Public state/WebSocket responses contain no link keys, session cookies, captain approvals or reset backups. Links bind to one QB and never grant host access. A URL fragment (`#key=`) avoids sending keys in the page request/referrer; the client exchanges the key with a same-origin JSON POST, then removes it from the address bar.
 
-## Broadcast effects
+Entry sets a secure, HttpOnly, SameSite=Lax cookie. Session identifiers are stored as hashes in SQLite and survive restarts for up to 30 days. Link records remain private so the host can copy them again. **Replace** invalidates the old link, its sessions and its existing sockets. Anyone holding a captain link can enter as that QB; distribute each only to its intended captain.
 
-New nominations reveal the player in the center. Each QB has an animated football character and a sign showing their latest bid on the current player. A new bid raises that captain's sign; the leader stays highlighted. Clicking a character opens the captain's team details. Host calls show **Going once**, **Going twice**, and **Going three times** at the top. New bids clear the call display. **SOLD** triggers falling cash, streamers, and a pulsing SOLD stamp. Effects and sound have separate controls; sound starts off. Reduced-motion preferences remove the movement. Practice view includes local-only preview buttons for reveals, bids, calls, and the sale celebration.
+The host retains the existing Discord organizer allowlist and identify-only OAuth. Existing approved Discord captains are supported. No new Discord app, secret, server join or message is required. Host browser sessions still require reconnection after a server restart. CSRF/origin checks protect mutations. Transactions serialize bids; revision and lot checks reject stale sales and resets.
+
+## Google board and storage
+
+The server checks spreadsheet `1Jzr9S4IVFj0WbYha9ViQXHNiOswcpaT0KYRwuOkoh8I`, tab `1601740487`, every 15 seconds. Google may briefly cache exports; the host has **Sync board now**. Keep it shared as Anyone with the link / Viewer. The app reads Google and does not write picks or bids back.
+
+The sheet owns QB names/order and player names/positions. Matching QBs by name preserves links when reordered. Sheet budget changes apply in the lobby; after starting, budgets come from the ledger. Extra player rows through 500 are supported. Duplicate/empty exports and failed reads retain the last valid board and show a warning.
+
+Removed available players disappear. Removing the active nominee cancels that nomination without spending and leaves the same QB on the clock. Sold players and their original positions remain recorded, and re-adding them does not make them available. Removing a QB with drafted players or an active bid is rejected; restore them on Google to resolve the sync warning.
+
+The parser expects QB anchors C5,E5,...,Y5, matching row-12 budgets, WR/LINE/FLEX headers C/K/S, and player anchors C/F/H, K/N/P, S/V/X.
+
+Auction tables are separate from registrations: `gfa_auction_state`, `gfa_auction_claims`, `gfa_auction_links`, `gfa_auction_access`, and `gfa_auction_reset_backups`. They use the existing mounted SQLite database. Keep one bot replica. Deployment never resets the draft.
+
+## Verification
+
+Run `python -m unittest discover -s bot/tests -v`, `node --check bot/auction_assets/app.js`, and `node --check bot/auction_assets/music.js`. Tests cover signup regression, private-link and Discord authorization, link replacement, presence, bid amounts/call resets, nomination order, competing bids, stale actions, board reconciliation, persistent state, resetting and recovery.
