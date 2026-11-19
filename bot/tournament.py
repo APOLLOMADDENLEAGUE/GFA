@@ -33,6 +33,7 @@ VALID_POSITIONS = ("QB", "WR", "LINE", "FLEX")
 OPEN_SIGNUP_POSITIONS = VALID_POSITIONS
 API = "https://discord.com/api/v10"
 SESSION_TTL = 20 * 60
+AUCTION_SESSION_TTL = 8 * 60 * 60
 
 
 class FlowError(Exception):
@@ -200,10 +201,10 @@ class TournamentServer:
         self.sessions[hashlib.sha256(raw.encode()).hexdigest()] = session
         params = {"response_type": "code", "client_id": self.client_id,
                   "redirect_uri": self.public_origin + "/auth/discord/callback",
-                  "scope": "identify" if mode == "organizer" else "identify guilds.join",
+                  "scope": "identify" if mode in {"organizer", "auction"} else "identify guilds.join",
                   "state": session["state"], "prompt": "consent"}
         response = web.Response(status=302, headers={"Location": "https://discord.com/oauth2/authorize?" + urlencode(params)})
-        response.set_cookie(self.cookie_name, raw, max_age=SESSION_TTL, secure=self.secure, httponly=True, samesite="Lax", path="/")
+        response.set_cookie(self.cookie_name, raw, max_age=AUCTION_SESSION_TTL if mode == "auction" else SESSION_TTL, secure=self.secure, httponly=True, samesite="Lax", path="/")
         return response
 
     def prune_sessions(self):
@@ -281,7 +282,7 @@ class TournamentServer:
             access_token = token.get("access_token")
             session["access_token"] = access_token
             scopes = set(token.get("scope", "").split())
-            required = {"identify"} if session["mode"] == "organizer" else {"identify", "guilds.join"}
+            required = {"identify"} if session["mode"] in {"organizer", "auction"} else {"identify", "guilds.join"}
             if not access_token or not required.issubset(scopes):
                 raise FlowError("Discord did not grant the permissions needed for signup. Try verification again.", 403)
             async with self.client.get(API + "/users/@me", headers={"Authorization": "Bearer " + access_token}) as response:
@@ -292,6 +293,13 @@ class TournamentServer:
                 raise FlowError("Discord returned an invalid account. Start signup again.", 502)
             session["user"] = {key: str(user.get(key) or "") for key in ("id", "username", "global_name")}
             session["expires"] = time.time() + min(SESSION_TTL, int(token.get("expires_in", SESSION_TTL)))
+            if session["mode"] == "auction":
+                await self.revoke(session.pop("access_token", None))
+                session["expires"] = time.time() + AUCTION_SESSION_TTL
+                target = session.get("draft", {}).get("return_to", "/auction/captain")
+                if target not in {"/auction/host", "/auction/captain"}:
+                    target = "/auction/captain"
+                return web.Response(status=302, headers={"Location": target})
             if session["mode"] == "organizer":
                 await self.revoke(session.pop("access_token", None))
                 if user["id"] not in self.admin_ids:
@@ -455,6 +463,11 @@ class TournamentServer:
                 response = self.page("Signup temporarily unavailable", '<h2>Please try again.</h2><p>We couldn’t complete this request. Return to GFA and try again shortly.</p><a href="https://officialgfa.com/turkey-bowl/">Back to GFA signup</a>', 503)
             response.headers.update({"Cache-Control": "no-store", "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY",
                 "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; img-src https://officialgfa.com; form-action 'self' https://discord.com; frame-ancestors 'none'; base-uri 'none'"})
+            if request.path.startswith("/auction"):
+                response.headers["Content-Security-Policy"] = ("default-src 'none'; script-src 'self'; "
+                    "style-src 'self'; img-src 'self' https://officialgfa.com data:; "
+                    "connect-src 'self'; font-src 'self'; form-action 'self' https://discord.com; "
+                    "frame-ancestors 'none'; base-uri 'none'")
             if self.secure:
                 response.headers["Strict-Transport-Security"] = "max-age=31536000"
             return response
@@ -464,6 +477,9 @@ class TournamentServer:
             web.get("/signup/review", self.review), web.post("/signup/complete", self.complete),
             web.get("/organizer", self.organizer), web.get("/organizer/login", self.organizer_login),
             web.get("/organizer/roster.csv", self.export_csv)])
+        from auction import AuctionServer
+        self.auction = AuctionServer(self)
+        self.auction.mount(app)
         return app
 
     async def start(self):
@@ -483,3 +499,4 @@ class TournamentServer:
             await self.runner.cleanup()
         if self.client:
             await self.client.close()
+

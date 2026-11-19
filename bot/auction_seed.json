@@ -1,0 +1,498 @@
+{
+  "title": "Turkey Bowl Auction Tournament",
+  "date": "2026-11-20",
+  "captains": [
+    {
+      "id": "captain-89ee8402a0b2f32f",
+      "name": "Jipper",
+      "budget": 800
+    },
+    {
+      "id": "captain-7d12e6ee11b37b60",
+      "name": "Matteh",
+      "budget": 800
+    },
+    {
+      "id": "captain-2063d112e46b3261",
+      "name": "Malik",
+      "budget": 800
+    },
+    {
+      "id": "captain-6ded944cb52b30c6",
+      "name": "Miskie",
+      "budget": 900
+    },
+    {
+      "id": "captain-7b6e2287c7edc5e9",
+      "name": "Quan",
+      "budget": 900
+    },
+    {
+      "id": "captain-3b33ec526f551fad",
+      "name": "DarkSubject",
+      "budget": 900
+    },
+    {
+      "id": "captain-5845345e48cf83e2",
+      "name": "JBX",
+      "budget": 800
+    },
+    {
+      "id": "captain-d395aad2239dd567",
+      "name": "Sparks",
+      "budget": 900
+    },
+    {
+      "id": "captain-9738b6bf3ae32f43",
+      "name": "Lunar",
+      "budget": 800
+    },
+    {
+      "id": "captain-23b6ac8d08a9c298",
+      "name": "Dome",
+      "budget": 800
+    },
+    {
+      "id": "captain-45095a74a0556c78",
+      "name": "Icczz",
+      "budget": 900
+    },
+    {
+      "id": "captain-a51b6dba67016a91",
+      "name": "Blurry",
+      "budget": 900
+    }
+  ],
+  "players": [
+    {
+      "id": "player-c3d533b57de425b5",
+      "name": "Aquas",
+      "position": "WR"
+    },
+    {
+      "id": "player-7b8bd6c0abf53d22",
+      "name": "Ethan",
+      "position": "WR"
+    },
+    {
+      "id": "player-4efc3631b2de2e2b",
+      "name": "numms",
+      "position": "WR"
+    },
+    {
+      "id": "player-9f2a08fde416cef2",
+      "name": "Alexander",
+      "position": "LINE"
+    },
+    {
+      "id": "player-2ff787684f50bd8a",
+      "name": "Hippy",
+      "position": "LINE"
+    },
+    {
+      "id": "player-371f024629f5d1c0",
+      "name": "Stach",
+      "position": "LINE"
+    },
+    {
+      "id": "player-5d4f22823578ac0f",
+      "name": "chaunce",
+      "position": "FLEX"
+    },
+    {
+      "id": "player-94c39299b84e943b",
+      "name": "Resteral",
+      "position": "FLEX"
+    },
+    {
+      "id": "player-fee563adcbf8f56c",
+      "name": "Abdul Carter",
+      "position": "FLEX"
+    },
+    {
+      "id": "player-0604de578f7e6b70",
+      "name": "Busaburninem",
+      "position": "WR"
+    },
+    {
+      "id": "player-2e9ecdb7a13c77ad",
+      "name": "Flows",
+      "position": "WR"
+    },
+    {
+      "id": "player-92e490af72641d07",
+      "name": "Qwack",
+      "position": "WR"
+    },
+    {
+      "id": "player-175d374a1e9f8545",
+      "name": "Alto",
+      "position": "LINE"
+    },
+    {
+      "id": "player-a5ad895656074bb1",
+      "name": "Juice",
+      "position": "LINE"
+    },
+    {
+      "id": "player-05b0740c5783dbd1",
+      "name": "Sushi Parsons",
+      "position": "LINE"
+    },
+    {
+      "id": "player-392508cad55ab92c",
+      "name": "Major Syn",
+      "position": "FLEX"
+    },
+    {
+      "id": "player-d30db74ae503504c",
+      "name": "Resp",
+      "position": "FLEX"
+    },
+    {
+      "id": "player-ba32925f15fdd6e2",
+      "name": "CSN",
+      "position": "WR"
+    },
+    {
+      "id": "player-2dc152ee8c127bfe",
+      "name": "Hyreek",
+      "position": "WR"
+    },
+    {
+      "id": "player-4ce08a3a7441043a",
+      "name": "Sebb",
+      "position": "WR"
+    },
+    {
+      "id": "player-81728c3eede2cb1b",
+      "name": "ANGY",
+      "position": "LINE"
+    },
+    {
+      "id": "player-399feae312649a04",
+      "name": "Kalios",
+      "position": "LINE"
+    },
+    {
+      "id": "player-6a17eefcd47e4273",
+      "name": "The Dave",
+      "position": "LINE"
+    },
+    {
+      "id": "player-d79c46847611a12e",
+      "name": "Exceptionally Mediocre",
+      "position": "FLEX"
+    },
+    {
+      "id": "player-5ce9e78e7053aa31",
+      "name": "Bamanick",
+      "position": "FLEX"
+    },
+    {
+      "id": "player-6679e9b2f043aafa",
+      "name": "TeaTree",
+      "position": "FLEX"
+    },
+    {
+      "id": "player-a5149e4ff1c69440",
+      "name": "Davante",
+      "position": "WR"
+    },
+    {
+      "id": "player-6cadf2f0f34dc55a",
+      "name": "Kenny",
+      "position": "WR"
+    },
+    {
+      "id": "player-e615f73fdb913b0c",
+      "name": "Sethj4",
+      "position": "WR"
+    },
+    {
+      "id": "player-aa3fded767e6138a",
+      "name": "Begrip",
+      "position": "LINE"
+    },
+    {
+      "id": "player-8535e86c8118bbbb",
+      "name": "Leo",
+      "position": "LINE"
+    },
+    {
+      "id": "player-d838d9f6e4bc8d22",
+      "name": "DJKay",
+      "position": "FLEX"
+    },
+    {
+      "id": "player-845d111eca24e50b",
+      "name": "Meritor",
+      "position": "FLEX"
+    },
+    {
+      "id": "player-43fd611dc9c3c094",
+      "name": "GaiminBruh",
+      "position": "FLEX"
+    },
+    {
+      "id": "player-52c8e02987ccb1b0",
+      "name": "Death",
+      "position": "WR"
+    },
+    {
+      "id": "player-318e7c73bb60cb58",
+      "name": "Jett",
+      "position": "WR"
+    },
+    {
+      "id": "player-aa634dcfba9fbd62",
+      "name": "Itachi",
+      "position": "WR"
+    },
+    {
+      "id": "player-a03da2c848fcfa06",
+      "name": "BigBroBanana",
+      "position": "LINE"
+    },
+    {
+      "id": "player-486004781ee0bdd2",
+      "name": "loba",
+      "position": "LINE"
+    },
+    {
+      "id": "player-f6db0672fb78e94d",
+      "name": "thecornman13",
+      "position": "LINE"
+    },
+    {
+      "id": "player-b644645820b3f5e5",
+      "name": "versed",
+      "position": "FLEX"
+    },
+    {
+      "id": "player-6e0c18a57d20587b",
+      "name": "Velcarus",
+      "position": "FLEX"
+    },
+    {
+      "id": "player-98f141f69f74e55b",
+      "name": "AK41",
+      "position": "FLEX"
+    },
+    {
+      "id": "player-68da4167b0cd79b7",
+      "name": "devil",
+      "position": "WR"
+    },
+    {
+      "id": "player-b04a508509a4b3cd",
+      "name": "juju",
+      "position": "WR"
+    },
+    {
+      "id": "player-759f4ad4ad01eadb",
+      "name": "MEGATRON81",
+      "position": "WR"
+    },
+    {
+      "id": "player-0e352b5f0fde05e3",
+      "name": "ChrisPnutts",
+      "position": "LINE"
+    },
+    {
+      "id": "player-59a722cb4c5a776e",
+      "name": "Onkey",
+      "position": "LINE"
+    },
+    {
+      "id": "player-87d10bca63de1aa7",
+      "name": "togaed64",
+      "position": "LINE"
+    },
+    {
+      "id": "player-2c50624bea38c570",
+      "name": "Pants",
+      "position": "FLEX"
+    },
+    {
+      "id": "player-e676b5103a4f9d93",
+      "name": "Soy",
+      "position": "FLEX"
+    },
+    {
+      "id": "player-a7efbd6f96bb2fdb",
+      "name": "DivinerLoco",
+      "position": "WR"
+    },
+    {
+      "id": "player-e3456bc1f4d270f4",
+      "name": "Lead",
+      "position": "WR"
+    },
+    {
+      "id": "player-3a3e4ea95d448a14",
+      "name": "Visc",
+      "position": "WR"
+    },
+    {
+      "id": "player-d4e3225dc715a866",
+      "name": "FitzJiffy",
+      "position": "LINE"
+    },
+    {
+      "id": "player-d10430eb35ad37fa",
+      "name": "Pulzy",
+      "position": "LINE"
+    },
+    {
+      "id": "player-80fb8ca44e023de8",
+      "name": "uki",
+      "position": "LINE"
+    },
+    {
+      "id": "player-e24ef8f938288781",
+      "name": "Eden",
+      "position": "WR"
+    },
+    {
+      "id": "player-7d980bbde514db41",
+      "name": "Mai",
+      "position": "WR"
+    },
+    {
+      "id": "player-25fa69ab0a3efad9",
+      "name": "Yams",
+      "position": "WR"
+    },
+    {
+      "id": "player-9c20ed1b0b9f3056",
+      "name": "Hab",
+      "position": "LINE"
+    },
+    {
+      "id": "player-8d9b4756898b6347",
+      "name": "PunisherF5",
+      "position": "LINE"
+    },
+    {
+      "id": "player-63c775cf41945e44",
+      "name": "Vishy",
+      "position": "LINE"
+    },
+    {
+      "id": "player-b298494e1d7a50ae",
+      "name": "Coleworld",
+      "position": "WR"
+    },
+    {
+      "id": "player-e65f4e26fd39617b",
+      "name": "Twhy",
+      "position": "WR"
+    },
+    {
+      "id": "player-4f31fa50e5bd5ff4",
+      "name": "Matt",
+      "position": "WR"
+    },
+    {
+      "id": "player-a4e63bcacf6c172a",
+      "name": "Halo",
+      "position": "LINE"
+    },
+    {
+      "id": "player-8604818af4d21bbf",
+      "name": "RJ",
+      "position": "LINE"
+    },
+    {
+      "id": "player-3614b894dbfeb015",
+      "name": "YFI",
+      "position": "LINE"
+    },
+    {
+      "id": "player-0237742265ea9ac1",
+      "name": "Salty",
+      "position": "WR"
+    },
+    {
+      "id": "player-49eff747f7b66f70",
+      "name": "Thunder",
+      "position": "WR"
+    },
+    {
+      "id": "player-ecc635da0b1efd5c",
+      "name": "Nick Chubb",
+      "position": "WR"
+    },
+    {
+      "id": "player-a5936f0096642808",
+      "name": "2tacos",
+      "position": "LINE"
+    },
+    {
+      "id": "player-81740f30b6ee7fcc",
+      "name": "The Guy",
+      "position": "LINE"
+    },
+    {
+      "id": "player-3445a673adc6e9c8",
+      "name": "JBKnuckles",
+      "position": "LINE"
+    },
+    {
+      "id": "player-edcd8e701a2df0cd",
+      "name": "NINE",
+      "position": "WR"
+    },
+    {
+      "id": "player-a7758b717f782957",
+      "name": "FlukeMaster",
+      "position": "WR"
+    },
+    {
+      "id": "player-20d2eebcea92ab13",
+      "name": "TheREALlilT",
+      "position": "WR"
+    },
+    {
+      "id": "player-dba29f165c20ed39",
+      "name": "MuddyDT",
+      "position": "LINE"
+    },
+    {
+      "id": "player-988e62e32796f8a3",
+      "name": "Deion",
+      "position": "LINE"
+    },
+    {
+      "id": "player-21c362de47d81c0d",
+      "name": "turkey-",
+      "position": "WR"
+    },
+    {
+      "id": "player-0477b12c92f41b20",
+      "name": "tco",
+      "position": "WR"
+    },
+    {
+      "id": "player-03078802b099be1f",
+      "name": "XTails",
+      "position": "LINE"
+    },
+    {
+      "id": "player-640dcbd00e38411e",
+      "name": "Xeno",
+      "position": "LINE"
+    },
+    {
+      "id": "player-eb108a6bbdaf145d",
+      "name": "LTD",
+      "position": "LINE"
+    },
+    {
+      "id": "player-622ae5299531a51b",
+      "name": "Jarebear",
+      "position": "LINE"
+    }
+  ]
+}
