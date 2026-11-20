@@ -119,6 +119,8 @@ def reconcile_board(state, seed):
         state["turn"] = 0
     else:
         state["turn"] = next((i for i, c in enumerate(captains) if c["id"] == current_turn), 0)
+    if state["phase"] in {"nominating", "leftovers"}:
+        advance_turn(state, state["turn"] - 1)
     return state
 
 
@@ -156,12 +158,18 @@ def add_event(state, kind, text, **details):
 
 
 def advance_turn(state, previous):
+    """Paid turns skip empty budgets; free picks restart in original order."""
     count = len(state["captains"])
+    leftovers = state["phase"] == "leftovers"
+    if not leftovers and not any(c["budget"] >= 10 and len(c["roster"]) < state["slots"]
+                                 for c in state["captains"]):
+        leftovers, previous = True, -1
     for offset in range(1, count + 1):
         index = (previous + offset) % count
-        if len(state["captains"][index]["roster"]) < state["slots"]:
+        captain = state["captains"][index]
+        if len(captain["roster"]) < state["slots"] and (leftovers or captain["budget"] >= 10):
             state["turn"] = index
-            state["phase"] = "nominating"
+            state["phase"] = "leftovers" if leftovers else "nominating"
             break
     else:
         state["phase"] = "complete"
@@ -172,7 +180,7 @@ def apply_action(state, action, actor):
     """Pure state transition; the store serializes and commits it atomically."""
     kind = action.get("type")
     host = actor.get("host", False)
-    if kind in {"start", "reset", "pause", "turn", "call", "sold", "pass", "undo"}:
+    if kind in {"start", "reset", "pause", "turn", "call", "sold", "pass", "undo", "leftovers"}:
         if not host:
             raise AuctionError("Only the host can use this control.", 403)
         if action.get("revision") != state["revision"]:
@@ -191,16 +199,25 @@ def apply_action(state, action, actor):
         if state["phase"] != "setup":
             raise AuctionError("The auction has already started.", 409)
         state["phase"] = "nominating"
+        advance_turn(state, -1)
         add_event(state, "start", "The Turkey Bowl auction is open.")
+    elif kind == "leftovers":
+        if state["lot"] or state["phase"] != "nominating":
+            raise AuctionError("Finish the current auction before starting leftover picks.", 409)
+        state["phase"] = "leftovers"
+        advance_turn(state, -1)
+        add_event(state, "leftovers", "Leftover picks are open. One free player per turn in original QB order.")
     elif kind == "pause":
         state["paused"] = not state["paused"]
         add_event(state, "pause", "Auction paused." if state["paused"] else "Auction resumed.")
     elif kind == "turn":
-        if state["lot"]:
+        if state["lot"] or state["phase"] not in {"nominating", "leftovers"}:
             raise AuctionError("Finish the current player before changing the turn.", 409)
         captain = captain_for(state, action.get("captainId"))
         if len(captain["roster"]) >= state["slots"]:
             raise AuctionError("That captain's roster is full.")
+        if state["phase"] != "leftovers" and captain["budget"] < 10:
+            raise AuctionError("That captain is out of money and waits for leftover picks.")
         state["turn"] = state["captains"].index(captain)
         add_event(state, "turn", f"{captain['name']} is on the clock.")
     elif kind == "nominate":
@@ -211,6 +228,8 @@ def apply_action(state, action, actor):
             raise AuctionError("It is another captain's nomination turn.", 403)
         if len(captain["roster"]) >= state["slots"]:
             raise AuctionError("This captain's roster is full.")
+        if captain["budget"] < 10:
+            raise AuctionError("This captain is out of money and waits for leftover picks.")
         player = next((p for p in state["players"] if p["id"] == action.get("playerId")), None)
         if not player or player["status"] != "available":
             raise AuctionError("That player is no longer available.", 409)
@@ -224,6 +243,28 @@ def apply_action(state, action, actor):
         state["phase"] = "bidding"
         add_event(state, "nomination", f"{captain['name']} nominates {player['name']} for \u0024{amount}.",
                   playerId=player["id"], captainId=captain["id"], amount=amount)
+    elif kind == "pick":
+        if state["paused"] or state["phase"] != "leftovers" or state["lot"]:
+            raise AuctionError("Wait for leftover picks to open.", 409)
+        if action.get("revision") != state["revision"]:
+            raise AuctionError("The pick order changed. Review whose turn it is and try again.", 409)
+        captain = state["captains"][state["turn"]]
+        if not host and actor.get("captainId") != captain["id"]:
+            raise AuctionError("It is another captain's pick.", 403)
+        if len(captain["roster"]) >= state["slots"]:
+            raise AuctionError("This captain's roster is full.", 409)
+        player = next((p for p in state["players"] if p["id"] == action.get("playerId")), None)
+        if not player or player["status"] != "available":
+            raise AuctionError("That player is no longer available.", 409)
+        sale = {"id": secrets.token_hex(8), "playerId": player["id"],
+                "captainId": captain["id"], "amount": 0, "mode": "leftover",
+                "turnBefore": state["turn"], "nominatorId": captain["id"], "at": now()}
+        captain["roster"].append({"playerId": player["id"], "amount": 0})
+        player["status"] = "sold"
+        state["sales"].append(sale)
+        advance_turn(state, state["turn"])
+        add_event(state, "pick", f"{captain['name']} picks {player['name']} from the remaining pool.",
+                  playerId=player["id"], captainId=captain["id"], amount=0)
     elif kind == "bid":
         lot = state["lot"]
         if state["paused"] or state["phase"] != "bidding" or not lot:
@@ -288,7 +329,8 @@ def apply_action(state, action, actor):
         player = next(p for p in state["players"] if p["id"] == sale["playerId"])
         player["status"] = "available" if player.get("onBoard", True) else "removed"
         turn = next((i for i, c in enumerate(state["captains"]) if c["id"] == sale.get("nominatorId")), sale["turnBefore"])
-        state.update(turn=turn, phase="nominating")
+        state.update(turn=turn, phase="leftovers" if sale.get("mode") == "leftover" else "nominating")
+        advance_turn(state, turn - 1)
         state["round"] = min(6, len(state["sales"]) // len(state["captains"]) + 1)
         add_event(state, "undo", f"Last sale undone. {player['name']} is available again.")
     else:
@@ -329,6 +371,13 @@ class AuctionStore:
             db.execute("INSERT OR IGNORE INTO gfa_auction_state VALUES (?,?,?)",
                        (EVENT, 0, json.dumps(fresh_state(self.seed))))
             state = json.loads(db.execute("SELECT payload FROM gfa_auction_state WHERE event_key=?", (EVENT,)).fetchone()[0])
+            before = copy.deepcopy(state)
+            if state["phase"] in {"nominating", "leftovers"} and not state["lot"]:
+                advance_turn(state, state["turn"] - 1)
+            if state != before:
+                state["revision"] += 1
+                db.execute("UPDATE gfa_auction_state SET revision=?,payload=? WHERE event_key=?",
+                           (state["revision"], json.dumps(state), EVENT))
             self.ensure_links(db, state)
             db.execute("DELETE FROM gfa_auction_access WHERE expires<?", (int(time.time()),))
 

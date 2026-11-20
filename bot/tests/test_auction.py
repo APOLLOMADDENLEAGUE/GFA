@@ -82,6 +82,152 @@ class AuctionRulesTests(unittest.TestCase):
         with self.assertRaises(AuctionError):
             self.do("sold", {"captainId": actual}, lotId=self.state["lot"]["id"])
 
+    def test_paid_turns_skip_zero_budget_and_full_teams(self):
+        self.state["captains"][1]["budget"] = 0
+        self.state["captains"][2]["roster"] = [{}] * 6
+        self.open_lot()
+        self.do("sold", lotId=self.state["lot"]["id"])
+        self.assertEqual(self.state["turn"], 3)
+        self.assertEqual(self.state["phase"], "nominating")
+        with self.assertRaises(AuctionError):
+            self.do("turn", captainId=self.state["captains"][1]["id"])
+        self.state["turn"] = 1
+        with self.assertRaises(AuctionError):
+            self.do("nominate", playerId=self.state["players"][1]["id"], amount=10)
+
+    def test_last_paid_sale_starts_leftovers_at_first_open_team(self):
+        for c in self.state["captains"]:
+            c["budget"] = 0
+        self.state["captains"][10]["budget"] = 10
+        self.do("start")
+        self.assertEqual(self.state["turn"], 10)
+        self.do("nominate", playerId=self.state["players"][0]["id"], amount=10)
+        self.do("sold", lotId=self.state["lot"]["id"])
+        self.assertEqual(self.state["phase"], "leftovers")
+        self.assertEqual(self.state["turn"], 0)
+        self.do("undo")
+        self.assertEqual(self.state["phase"], "nominating")
+        self.assertEqual(self.state["turn"], 10)
+        self.assertEqual(self.state["captains"][10]["budget"], 10)
+
+    def test_leftovers_alternate_jipper_icczz_until_both_fill_three_slots(self):
+        for i, c in enumerate(self.state["captains"]):
+            c.update(budget=0, roster=[{"playerId": f"existing-{i}-{n}", "amount": 0} for n in range(3 if i in (0, 10) else 6)])
+        self.do("start")
+        self.assertEqual(self.state["phase"], "leftovers")
+        observed = []
+        for p in self.state["players"][:6]:
+            c = self.state["captains"][self.state["turn"]]
+            observed.append(c["id"])
+            self.do("pick", {"captainId": c["id"]}, playerId=p["id"])
+            self.assertEqual(p["status"], "sold")
+        self.assertEqual(observed, [self.state["captains"][i]["id"] for i in (0, 10, 0, 10, 0, 10)])
+        self.assertEqual(self.state["phase"], "complete")
+        self.assertTrue(all(len(c["roster"]) == 6 and c["budget"] == 0 for c in self.state["captains"]))
+        self.assertTrue(all(s["amount"] == 0 and s["mode"] == "leftover" for s in self.state["sales"]))
+        self.do("undo")
+        self.assertEqual(self.state["phase"], "leftovers")
+        self.assertEqual(self.state["turn"], 10)
+
+    def test_leftovers_skip_team_as_soon_as_it_fills(self):
+        for i, c in enumerate(self.state["captains"]):
+            c.update(budget=0, roster=[{"playerId": f"existing-{i}-{n}", "amount": 0} for n in range(5 if i == 0 else 4 if i == 10 else 6)])
+        self.do("start")
+        turns = []
+        for p in self.state["players"][:3]:
+            turns.append(self.state["turn"])
+            self.do("pick", playerId=p["id"])
+        self.assertEqual(turns, [0, 10, 10])
+        self.assertEqual(self.state["phase"], "complete")
+
+    def test_host_can_finish_bidding_but_captains_cannot(self):
+        self.do("start")
+        with self.assertRaises(AuctionError):
+            self.do("leftovers", {"captainId": self.state["captains"][0]["id"]})
+        self.do("nominate", playerId=self.state["players"][0]["id"], amount=10)
+        with self.assertRaises(AuctionError):
+            self.do("leftovers")
+        self.do("pass")
+        self.do("leftovers")
+        self.assertEqual(self.state["turn"], 0)
+        before = [c["budget"] for c in self.state["captains"]]
+        self.do("pick", playerId=self.state["players"][0]["id"], amount=900, captainId=self.state["captains"][5]["id"])
+        self.assertEqual([c["budget"] for c in self.state["captains"]], before)
+        self.assertEqual(self.state["sales"][-1]["captainId"], self.state["captains"][0]["id"])
+        with self.assertRaises(AuctionError):
+            self.do("nominate", playerId=self.state["players"][1]["id"], amount=10)
+
+    def test_free_pick_checks_turn_pause_availability_and_revision(self):
+        self.do("start")
+        with self.assertRaises(AuctionError):
+            self.do("pick", playerId=self.state["players"][0]["id"])
+        self.do("leftovers")
+        wrong = {"captainId": self.state["captains"][1]["id"]}
+        with self.assertRaises(AuctionError):
+            self.do("pick", wrong, playerId=self.state["players"][0]["id"])
+        self.do("pause")
+        with self.assertRaises(AuctionError):
+            self.do("pick", playerId=self.state["players"][0]["id"])
+        self.do("pause")
+        stale = {"type": "pick", "playerId": self.state["players"][0]["id"], "revision": self.state["revision"]}
+        self.do("pick", playerId=self.state["players"][0]["id"])
+        with self.assertRaises(AuctionError):
+            apply_action(self.state, stale, HOST)
+        with self.assertRaises(AuctionError):
+            self.do("pick", playerId=self.state["players"][0]["id"])
+        with self.assertRaises(AuctionError):
+            self.do("bid", amount=10, lotId="none")
+
+    def test_board_sync_preserves_leftover_mode_order_and_new_pool_players(self):
+        self.do("start")
+        self.do("leftovers")
+        self.do("pick", playerId=self.state["players"][0]["id"])
+        current = self.state["captains"][self.state["turn"]]["id"]
+        seed = copy.deepcopy(self.seed)
+        seed["captains"].reverse()
+        seed["players"].pop(0)
+        seed["players"].append({"id": "late", "name": "Late player", "position": "FLEX"})
+        reconcile_board(self.state, seed)
+        self.assertEqual(self.state["phase"], "leftovers")
+        self.assertEqual(self.state["captains"][self.state["turn"]]["id"], current)
+        self.assertEqual(next(p for p in self.state["players"] if p["id"] == "late")["status"], "available")
+        self.assertEqual(len(self.state["sales"]), 1)
+
+    def test_free_pick_persists_and_competing_requests_only_fill_one_slot(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store = AuctionStore(Path(folder) / "auction.sqlite", self.seed)
+            store.initialize()
+            s = store.mutate({"type": "start", "revision": 0}, HOST)
+            s = store.mutate({"type": "leftovers", "revision": s["revision"]}, HOST)
+            def pick(i):
+                try:
+                    store.mutate({"type": "pick", "revision": s["revision"], "playerId": s["players"][i]["id"]}, HOST)
+                    return True
+                except AuctionError:
+                    return False
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                self.assertEqual(sum(executor.map(pick, [0, 1])), 1)
+            reopened = AuctionStore(store.path, self.seed)
+            reopened.initialize()
+            self.assertEqual(reopened.state(), store.state())
+            self.assertEqual(reopened.state()["phase"], "leftovers")
+            self.assertEqual(len(reopened.state()["sales"]), 1)
+
+    def test_existing_draft_reopens_with_zero_budget_turn_skipped(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store = AuctionStore(Path(folder) / "auction.sqlite", self.seed)
+            store.initialize()
+            s = store.mutate({"type": "start", "revision": 0}, HOST)
+            s["captains"][0]["budget"] = 0
+            with store.connect() as db:
+                db.execute("UPDATE gfa_auction_state SET payload=?", (json.dumps(s),))
+            store.initialize()
+            resumed = store.state()
+            self.assertEqual(resumed["phase"], "nominating")
+            self.assertEqual(resumed["turn"], 1)
+            self.assertEqual(resumed["captains"][0]["budget"], 0)
+            self.assertEqual(resumed["sales"], s["sales"])
+
     def test_late_bid_and_stale_sale_are_rejected(self):
         self.open_lot()
         stale = {"type": "sold", "revision": self.state["revision"], "lotId": self.state["lot"]["id"]}
@@ -349,6 +495,31 @@ class AuctionAPITests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.status,403)
         self.a.store.mutate({'type':'call','revision':s['revision']},HOST)
         self.assertEqual(self.a.store.state()['lot']['call'],1)
+
+    async def test_private_captain_can_only_pick_on_their_leftover_turn(self):
+        s = self.a.store.mutate({'type': 'start', 'revision': 0}, HOST)
+        s = self.a.store.mutate({'type': 'leftovers', 'revision': s['revision']}, HOST)
+        links = self.a.store.links()
+        first = next(i for i, link in enumerate(links) if link['captainId'] == s['captains'][0]['id'])
+        other = next(i for i, link in enumerate(links) if link['captainId'] != s['captains'][0]['id'])
+        me = await self.enter_link(other)
+        payload = {'type': 'pick', 'revision': s['revision'], 'playerId': s['players'][0]['id']}
+        response = await self.post(payload, csrf=me['csrf'])
+        self.assertEqual(response.status, 403)
+        response = await self.post({'type': 'leftovers', 'revision': s['revision']}, csrf=me['csrf'])
+        self.assertEqual(response.status, 403)
+        me = await self.enter_link(first)
+        response = await self.post(payload, csrf='wrong')
+        self.assertEqual(response.status, 403)
+        response = await self.post(payload, csrf=me['csrf'])
+        self.assertEqual(response.status, 200, await response.text())
+        picked = await response.json()
+        self.assertEqual(picked['phase'], 'leftovers')
+        self.assertEqual(picked['turn'], 1)
+        self.assertEqual(picked['captains'][0]['budget'], s['captains'][0]['budget'])
+        self.assertEqual(picked['sales'][-1]['amount'], 0)
+        response = await self.post(payload, csrf=me['csrf'])
+        self.assertEqual(response.status, 409)
 
     async def test_presence_wakes_only_authenticated_captain_and_sleeps_after_last_connection(self):
         viewer=await self.browser.ws_connect('/auction/live',headers={'Origin':self.t.public_origin})

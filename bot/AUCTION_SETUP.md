@@ -9,9 +9,11 @@ The existing GFA bot serves `/auction/captain`, `/auction/host`, and the read-on
 3. Check the Google board sync and QB order, then press **Start Draft**.
 4. The current QB selects a player and must enter a starting bid in $10 steps. They may tell the host instead. Every connected captain can bid during any call until **SOLD**, within their remaining budget and six-player roster limit.
 5. Host controls are **Going once**, **Going twice**, **Going three times**, and **SOLD**. Every valid new bid clears the call/banner; the next press starts at Going once again.
-6. A sale deducts money, fills the winning roster, marks the player taken and advances to the next nominator. The order repeats QB 1 through QB 12, then QB 1 again, skipping full teams. Each team drafts six players.
+6. A sale deducts money, fills the winning roster, marks the player taken and advances to the next nominator. The order repeats QB 1 through QB 12, then QB 1 again, skipping full teams and QBs with $0. Each team drafts six players.
+7. When no QB with an open slot has money left, **Leftover picks** starts automatically at the first QB with an open slot in the original board order. Each chooses one free player from the remaining pool, then the next eligible QB picks. The order repeats until every roster is full. Full teams are skipped. For example, Jipper and Icczz each needing three players alternate Jipper, Icczz, Jipper, Icczz, Jipper, Icczz.
+8. The host can also press **Start leftover picks** between auctions to finish bidding early. In this phase the current QB (or host on their behalf) uses **Pick player · free** with no bid field. Budgets stay unchanged, and picks fill rosters live.
 
-The host can pause, submit proxy bids, pass a player, change the nomination turn, undo the last sale when no nomination is active, and export drafted teams at `/auction/export.csv`.
+The host can pause, submit proxy bids, pass a player, change the nomination turn, undo the last pick or sale when no nomination is active, and export drafted teams at `/auction/export.csv`.
 
 ## Reset and practice
 
@@ -25,7 +27,7 @@ Each reset saves the previous draft in the private database; ten backups are ret
 
 Use `/auction/stream` as a 1920x1080 OBS browser source. In a browser, press **Full Screen** (or F) to fill the display; Escape or **Exit Full Screen** exits. The full broadcast scales to fit the screen while preserving every roster slot and character. All twelve team rosters, six slots each, stay visible above the characters alongside remaining budgets. Sales fill the rosters immediately. Click a character to inspect a team. The full pool and position filters remain available in the draft room.
 
-Nominations reveal the player in the center. QB signs display their latest bids and raise on new bids. Calls pop up at the top. SOLD brings falling cash, a pulsing stamp and a position highlight: a WR catch, a LINE block or sack, or a FLEX catch followed by a block. Effects and sound have separate controls; reduced-motion preferences remove movement.
+Nominations reveal the player in the center. QB signs display their latest bids and raise on new bids. Calls pop up at the top. Free picks show PICKED with a position highlight; paid SOLD brings falling cash, a pulsing stamp and a position highlight: a WR catch, a LINE block or sack, or a FLEX catch followed by a block. Effects and sound have separate controls; reduced-motion preferences remove movement.
 
 **Music** starts an original 92 BPM lounge instrumental synthesized locally with keys, bass and drums. Its volume slider is separate from sound effects. Music starts only after a click, and sound effects start off.
 
