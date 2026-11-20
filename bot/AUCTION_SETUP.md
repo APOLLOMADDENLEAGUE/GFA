@@ -23,7 +23,7 @@ Each reset saves the previous draft in the private database; ten backups are ret
 
 ## Stream and audio
 
-Use `/auction/stream` as a 1920x1080 OBS browser source. All twelve team rosters, six slots each, stay visible above the characters alongside remaining budgets. Sales fill the rosters immediately. Click a character to inspect a team. The full pool and position filters remain available in the draft room.
+Use `/auction/stream` as a 1920x1080 OBS browser source. In a browser, press **Full Screen** (or F) to fill the display; Escape or **Exit Full Screen** exits. The full broadcast scales to fit the screen while preserving every roster slot and character. All twelve team rosters, six slots each, stay visible above the characters alongside remaining budgets. Sales fill the rosters immediately. Click a character to inspect a team. The full pool and position filters remain available in the draft room.
 
 Nominations reveal the player in the center. QB signs display their latest bids and raise on new bids. Calls pop up at the top. SOLD brings falling cash, a pulsing stamp and a position highlight: a WR catch, a LINE block or sack, or a FLEX catch followed by a block. Effects and sound have separate controls; reduced-motion preferences remove movement.
 

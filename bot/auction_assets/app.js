@@ -20,6 +20,35 @@
   const activeCaptain = () => state.captains[state.turn];
   const effectiveMe = () => demo ? (view === 'host' ? {role:'host',name:'Practice host'} : {role:'captain',name:'Practice captain',captainId:demoCaptain || state.captains[0].id}) : me;
   const stamp = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+  let fittedFullscreen=false;
+  function nativeStreamFullscreen(){return Boolean(document.fullscreenElement||document.webkitFullscreenElement);}
+  function streamFullscreen(){return fittedFullscreen||nativeStreamFullscreen();}
+  function fitStream(){
+    if(view!=='stream')return;
+    const full=streamFullscreen();
+    document.body.classList.toggle('broadcast-fit',full||(innerWidth>=1000&&innerHeight>=1000));
+    document.body.classList.toggle('fullscreen-stream',full);
+    if(full)document.documentElement.style.setProperty('--stream-fullscreen-scale',String(Math.min(innerWidth/1920,innerHeight/1080)));
+    else document.documentElement.style.removeProperty('--stream-fullscreen-scale');
+  }
+  async function toggleStreamFullscreen(){
+    if(view!=='stream')return;
+    if(streamFullscreen()){
+      fittedFullscreen=false;
+      try{
+        if(nativeStreamFullscreen()&&document.exitFullscreen)await document.exitFullscreen();
+        else if(nativeStreamFullscreen())document.webkitExitFullscreen?.();
+      }catch(_){}
+    }else{
+      fittedFullscreen=true;
+      fitStream();render();
+      try{
+        if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen({navigationUI:'hide'});
+        else if(document.documentElement.webkitRequestFullscreen)document.documentElement.webkitRequestFullscreen();
+      }catch(_){}
+    }
+    fitStream();render();
+  }
   function toast(message) { $('toast').textContent = message; $('toast').classList.add('visible'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),4500); }
   function beep(sold = false) {
     if (!sound) return;
@@ -181,7 +210,8 @@
     const focused=document.activeElement, focusId=focused?.id, start=focused?.selectionStart, end=focused?.selectionEnd;
     const user=effectiveMe(),available=state.players.filter(p=>p.status==='available').length;
     document.body.classList.toggle('stream',view==='stream');document.body.classList.toggle('effects-off',!effects);
-    $('app').innerHTML=`<div class="shell"><header class="topbar"><a href="https://officialgfa.com" aria-label="GFA home"><img class="logo" src="https://officialgfa.com/assets/thanksgiving-gfa.webp" alt="GFA"></a><div class="brand">GFA LIVE AUCTION<small>TURKEY BOWL / 2026</small></div><nav class="navigation" aria-label="Auction views">${link('captain','Draft room')}${link('host','Host desk')}${link('stream','Stream view')}<a href="#teams">Teams</a></nav><span class="spacer"></span><span class="connection ${connected?'':'offline'}">${demo?'PRACTICE':connected?'LIVE ROOM':'RECONNECTING'}</span><span class="account">${esc(user.name||'Spectator')}</span><div class="music-controls"><button class="sound-toggle quiet" data-action="music" aria-pressed="${music.playing}" ${musicBusy?'disabled':''}>Music ${music.playing?'on':'off'}</button><input id="music-volume" type="range" min="0" max="65" step="1" value="${Math.round(music.volume*100)}" aria-label="Auction music volume"></div><button class="sound-toggle quiet" data-action="effects" aria-pressed="${effects}">Effects ${effects?'on':'off'}</button><button class="sound-toggle quiet" data-action="sound" aria-pressed="${sound}">Sound ${sound?'on':'off'}</button></header>${demo?`<div class="demo-banner"><span><strong>PRACTICE PREVIEW</strong> · Local bids only. Your live auction is untouched.</span><div class="demo-actions"><button data-action="demo-reveal" ${!state.lot?'disabled':''}>Replay reveal</button><button data-action="demo-bid" ${!state.lot?'disabled':''}>Sample bid</button><button data-action="demo-call" ${!state.lot?'disabled':''}>Preview call</button><button data-action="demo-sold" ${!state.lot?'disabled':''}>SOLD preview</button><button data-action="demo-wake">Wake a QB</button><button data-action="load-demo">Load sample</button><button data-action="reset-demo">Reset Draft</button></div></div>`:''}<div class="headline"><div><div class="eyebrow">GFA PRESENTS / THANKSGIVING 2026</div><h1>THE <em>TURKEY BOWL</em> AUCTION</h1></div><div class="event-tag"><strong>FRIDAY, NOVEMBER 20</strong>${available} players available · 12 captains</div></div>${orderMarkup()}${stageMarkup()}${controlsMarkup()}${captainLinksMarkup()}${view==='stream'?'':poolMarkup()}${teamsMarkup()}${bidderPitMarkup()}<div class="activity" aria-label="Recent auction activity">${state.feed.slice(0,5).map(e=>`<div class="feed-item"><strong>${esc(e.kind.toUpperCase())}</strong>${esc(e.text)}<small>${new Date(e.at).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}</small></div>`).join('')}</div>${hostTools()}<footer class="footer"><span>GFA / TURKEY BOWL AUCTION TOURNAMENT · NOV 20, 2026</span><span><a href="${BOARD}" target="_blank" rel="noopener">Google draft board</a> · <a href="${url('stream')}">Stream view</a> · <a href="${url('host')}${demo?'':'?demo=1'}">Practice preview</a></span></footer></div>`;
+    $('app').innerHTML=`<div class="shell"><header class="topbar"><a href="https://officialgfa.com" aria-label="GFA home"><img class="logo" src="https://officialgfa.com/assets/thanksgiving-gfa.webp" alt="GFA"></a><div class="brand">GFA LIVE AUCTION<small>TURKEY BOWL / 2026</small></div><nav class="navigation" aria-label="Auction views">${link('captain','Draft room')}${link('host','Host desk')}${link('stream','Stream view')}<a href="#teams">Teams</a></nav><span class="spacer"></span><span class="connection ${connected?'':'offline'}">${demo?'PRACTICE':connected?'LIVE ROOM':'RECONNECTING'}</span><span class="account">${esc(user.name||'Spectator')}</span>${view==='stream'?`<button class="fullscreen-toggle primary" data-action="fullscreen" aria-pressed="${streamFullscreen()}" title="Toggle full screen (F)">${streamFullscreen()?'Exit Full Screen':'Full Screen'}</button>`:''}<div class="music-controls"><button class="sound-toggle quiet" data-action="music" aria-pressed="${music.playing}" ${musicBusy?'disabled':''}>Music ${music.playing?'on':'off'}</button><input id="music-volume" type="range" min="0" max="65" step="1" value="${Math.round(music.volume*100)}" aria-label="Auction music volume"></div><button class="sound-toggle quiet" data-action="effects" aria-pressed="${effects}">Effects ${effects?'on':'off'}</button><button class="sound-toggle quiet" data-action="sound" aria-pressed="${sound}">Sound ${sound?'on':'off'}</button></header>${demo?`<div class="demo-banner"><span><strong>PRACTICE PREVIEW</strong> · Local bids only. Your live auction is untouched.</span><div class="demo-actions"><button data-action="demo-reveal" ${!state.lot?'disabled':''}>Replay reveal</button><button data-action="demo-bid" ${!state.lot?'disabled':''}>Sample bid</button><button data-action="demo-call" ${!state.lot?'disabled':''}>Preview call</button><button data-action="demo-sold" ${!state.lot?'disabled':''}>SOLD preview</button><button data-action="demo-wake">Wake a QB</button><button data-action="load-demo">Load sample</button><button data-action="reset-demo">Reset Draft</button></div></div>`:''}<div class="headline"><div><div class="eyebrow">GFA PRESENTS / THANKSGIVING 2026</div><h1>THE <em>TURKEY BOWL</em> AUCTION</h1></div><div class="event-tag"><strong>FRIDAY, NOVEMBER 20</strong>${available} players available · 12 captains</div></div>${orderMarkup()}${stageMarkup()}${controlsMarkup()}${captainLinksMarkup()}${view==='stream'?'':poolMarkup()}${teamsMarkup()}${bidderPitMarkup()}<div class="activity" aria-label="Recent auction activity">${state.feed.slice(0,5).map(e=>`<div class="feed-item"><strong>${esc(e.kind.toUpperCase())}</strong>${esc(e.text)}<small>${new Date(e.at).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}</small></div>`).join('')}</div>${hostTools()}<footer class="footer"><span>GFA / TURKEY BOWL AUCTION TOURNAMENT · NOV 20, 2026</span><span><a href="${BOARD}" target="_blank" rel="noopener">Google draft board</a> · <a href="${url('stream')}">Stream view</a> · <a href="${url('host')}${demo?'':'?demo=1'}">Practice preview</a></span></footer></div>`;
+    fitStream();
     if(focusId && $(focusId)){const el=$(focusId);el.focus({preventScroll:true});try{if(start!==null)el.setSelectionRange(start,end);}catch(_){} }
   }
   async function refreshMe(){if(demo||accessError)return;try{const res=await fetch('/auction/api/me',{cache:'no-store'});me=await res.json();render();}catch(_){} }
@@ -239,7 +269,8 @@
   document.addEventListener('submit',event=>{const f=event.target;if(!f.dataset.form)return;event.preventDefault();if(!f.reportValidity())return;const data=Object.fromEntries(new FormData(f));if('amount'in data)data.amount=Number(data.amount);action({type:f.dataset.form,...data});});
   document.addEventListener('click',event=>{
     const b=event.target.closest('[data-action]');if(!b)return;const type=b.dataset.action;
-    if(type==='filter'){filter=b.dataset.position;render();}
+    if(type==='fullscreen'){toggleStreamFullscreen();}
+    else if(type==='filter'){filter=b.dataset.position;render();}
     else if(type==='quick'){fields['bid-amount']=(state.lot?.amount||0)+Number(b.dataset.amount);render();$('bid-amount')?.focus();}
     else if(type==='select-player'){
       const role=effectiveMe();if(!((view==='host'&&role.role==='host')||role.captainId===activeCaptain().id)||state.phase!=='nominating'){toast(`${player(b.dataset.player).name} · ${player(b.dataset.player).position}`);return;}
@@ -283,5 +314,14 @@
     if(demo){originalSeed=data;connected=true;try{const saved=JSON.parse(localStorage.getItem(DEMO_KEY));if(saved?.captains?.length===12)accept(saved,false);else resetDemo();}catch(_){resetDemo();}channel&&(channel.onmessage=e=>accept(e.data));window.addEventListener('storage',e=>{if(e.key===DEMO_KEY&&e.newValue)accept(JSON.parse(e.newValue));});}
     else{accept(data,false);await refreshMe();connect();setInterval(refreshMe,7000);setInterval(async()=>{if(!connected){try{const r=await fetch('/auction/api/state',{cache:'no-store'});if(r.ok)accept(await r.json());}catch(_){}}},4000);}
   }catch(error){$('app').innerHTML=`<main class="loading"><div class="eyebrow">GFA TURKEY BOWL</div><h1>ROOM CONNECTING</h1><p>${esc(error.message)} Reload to try again.</p></main>`;}}
+  document.addEventListener('fullscreenchange',()=>{fittedFullscreen=nativeStreamFullscreen();fitStream();if(view==='stream')render();});
+  document.addEventListener('webkitfullscreenchange',()=>{fittedFullscreen=nativeStreamFullscreen();fitStream();if(view==='stream')render();});
+  window.addEventListener('resize',fitStream);
+  document.addEventListener('keydown',event=>{
+    if(view==='stream'&&event.key==='Escape'&&streamFullscreen()){event.preventDefault();toggleStreamFullscreen();return;}
+    if(view==='stream'&&event.key.toLowerCase()==='f'&&!event.ctrlKey&&!event.metaKey&&!event.altKey&&!event.target.closest('input,select,textarea,[contenteditable="true"]')){
+      event.preventDefault();toggleStreamFullscreen();
+    }
+  });
   load();
 })();
