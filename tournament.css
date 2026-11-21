@@ -56,5 +56,17 @@
 @media(max-width:800px){.tourney-page .tourney-gallery{grid-template-columns:1fr;max-width:720px}}
 @media(max-width:600px){.tourney-page .tourney-gallery{margin:18px 15px 0;padding:6px;gap:8px}.tourney-page .tourney-art-card .tourney-eventline{min-height:0;font-size:9px;padding:10px}.tourney-page .tourney-gallery .tourney-winner-art,.tourney-page .tourney-leader-art{aspect-ratio:16/9}}
 
-/* Keep the extra signup link readable at tablet widths. */
+/* Keep tournament navigation readable at tablet widths. */
 @media(min-width:701px) and (max-width:1200px){header{flex-wrap:wrap}header nav{order:3;width:100%;justify-content:space-between;gap:15px;overflow-x:auto}header nav a{white-space:nowrap;font-size:14px;padding:10px 0}.archive-link{display:none}}
+
+/* Separate completed tournaments in the order they were played. */
+.tourney-results-section{max-width:1400px;margin:32px auto 0;scroll-margin-top:24px}
+.tourney-results-section:last-child{margin-bottom:56px}
+.tourney-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin:0 0 16px}
+.tourney-section-label{color:#ffb276;font-size:14px;font-weight:700;letter-spacing:1.2px;margin:0 0 10px}
+.tourney-section-heading h1,.tourney-section-heading h2{font:800 clamp(28px,3.4vw,42px)/1.05 'Barlow Condensed',Impact,sans-serif;color:#fff4e8;letter-spacing:0;margin:0}
+.tourney-section-date{color:#cbbbd5;font-size:14px;white-space:nowrap;margin:0 0 3px}
+.tourney-results-section .tourney-gallery{max-width:none;margin:0}
+.tourney-page .tourney-turkey-gallery{grid-template-columns:1fr}
+@media(max-width:1450px){.tourney-results-section{margin:32px 24px 0}}
+@media(max-width:600px){.tourney-results-section{margin:26px 15px 0}.tourney-section-heading{align-items:flex-start;flex-direction:column;gap:9px;margin-bottom:13px}.tourney-section-label{font-size:14px;letter-spacing:.8px}.tourney-section-heading h1,.tourney-section-heading h2{font-size:30px}.tourney-section-date{margin:0}.tourney-results-section:last-child{margin-bottom:36px}.tourney-results-section .tourney-gallery{margin:0}}
