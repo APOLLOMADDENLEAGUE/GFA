@@ -5,6 +5,7 @@ window.GFATournament = {
     const main = document.querySelector('main');
     document.body.classList.add('tourney-page');
     const winnersGraphic = new URL('assets/halloween-tournament-winners.jpg', this.assetRoot).href;
+    const turkeyLeadersGraphic = new URL('assets/turkey-bowl-leaders-2026.png', this.assetRoot).href;
     const turkeyWinnersGraphic = new URL('assets/turkey-bowl-winners-2026.jpg', this.assetRoot).href;
     const leadersGraphic = new URL('assets/halloween-tournament-leaders.png', this.assetRoot).href;
     main.innerHTML = `
@@ -33,6 +34,10 @@ window.GFATournament = {
           <figure class="tourney-art-card">
             <figcaption class="tourney-eventline"><span>TURKEY BOWL · 2026</span><span>NO FEAST NO PEACE</span></figcaption>
             <img class="tourney-winner-art" src="${turkeyWinnersGraphic}" alt="Turkey Bowl Tournament Winners: No Feast No Peace. Icczz, Death, Kenny, Eden, RJ, Stach, and Velcarus." width="1672" height="941" loading="lazy">
+          </figure>
+          <figure class="tourney-art-card">
+            <figcaption class="tourney-eventline"><span>OFFICIAL TOURNAMENT LEADERS</span><span>TOURNAMENT MVP · JAX</span></figcaption>
+            <img class="tourney-leader-art" src="${turkeyLeadersGraphic}" alt="Turkey Bowl official tournament leaders in passing, rushing, receiving, touchdowns, tackles, sacks, interceptions, and blocks. Tournament MVP Jax: 643 receiving yards, 44 tackles, 12 sacks, and 7 touchdowns across 4 appearances." width="1672" height="941" loading="lazy">
           </figure>
         </div>
       </section>`;

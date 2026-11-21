@@ -67,6 +67,8 @@
 .tourney-section-heading h1,.tourney-section-heading h2{font:800 clamp(28px,3.4vw,42px)/1.05 'Barlow Condensed',Impact,sans-serif;color:#fff4e8;letter-spacing:0;margin:0}
 .tourney-section-date{color:#cbbbd5;font-size:14px;white-space:nowrap;margin:0 0 3px}
 .tourney-results-section .tourney-gallery{max-width:none;margin:0}
-.tourney-page .tourney-turkey-gallery{grid-template-columns:1fr}
+.tourney-page .tourney-turkey-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}
 @media(max-width:1450px){.tourney-results-section{margin:32px 24px 0}}
 @media(max-width:600px){.tourney-results-section{margin:26px 15px 0}.tourney-section-heading{align-items:flex-start;flex-direction:column;gap:9px;margin-bottom:13px}.tourney-section-label{font-size:14px;letter-spacing:.8px}.tourney-section-heading h1,.tourney-section-heading h2{font-size:30px}.tourney-section-date{margin:0}.tourney-results-section:last-child{margin-bottom:36px}.tourney-results-section .tourney-gallery{margin:0}}
+
+@media(max-width:800px){.tourney-page .tourney-turkey-gallery{grid-template-columns:1fr}}

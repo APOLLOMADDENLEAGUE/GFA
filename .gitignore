@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+bot/data/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
