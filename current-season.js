@@ -102,7 +102,7 @@ window.GFASeason = (() => {
     const currentStats=p.stats&&Object.keys(p.stats).length?p.stats:null;
     const position={WR:'Wide receiver',QB:'Quarterback',RB:'Running back',OL:'Offensive line',LINE:'Lineman',FLEX:'Flex'}[p.position]||p.position||'Player';
     const available=value=>value!==null&&value!==undefined&&value!==''&&value!=='—';
-    const stat=(value,key='')=>!available(value)?'—':key==='Comp %'?esc(value):Number.isFinite(Number(String(value).replaceAll(',','')))?Number(String(value).replaceAll(',','')).toLocaleString('en-US',{maximumFractionDigits:key==='AVG'?1:3,minimumFractionDigits:key==='AVG'?1:0}):esc(value);
+    const stat=(value,key='')=>!available(value)?'—':key==='Comp %'?esc(value):Number.isFinite(Number(String(value).replaceAll(',','')))?Number(String(value).replaceAll(',','')).toLocaleString('en-US',{maximumFractionDigits:key==='AVG'?1:0,minimumFractionDigits:key==='AVG'?1:0}):esc(value);
     function combine(rows) {
       if(!rows.length)return null;
       if(rows.length===1)return {...rows[0]};
@@ -113,14 +113,14 @@ window.GFASeason = (() => {
     }
     const history=stage=>[1,2,3,4].flatMap(s=>{const rows=(D[stage]?.[s]||[]).filter(row=>matches(row['Player Name']));return rows.length?[{s,stats:combine(rows),source:rows[0]}]:[];});
     const regular=history('players'),playoffs=history('playoffs');
-    const archivedCareer=combine(regular.filter(row=>row.s!==4).map(row=>row.stats));
+    const archivedCareer=combine(regular.map(row=>row.stats));
     const oldAwards=D.awards.filter(award=>matches(award.name));
     const newAwards=season.awards.filter(award=>award.playerId===p.id);
     const avg=stats=>stats&&num(stats.Receptions)?num(stats['Rec Yards'])/num(stats.Receptions):null;
     const receiving=['Games Played','Receptions','Rec Yards','Rec TDs','AVG'];
     const short={'Games Played':'GP','Receptions':'REC','Rec Yards':'YDS','Rec TDs':'TD','AVG':'AVG','Pass Yards':'YDS','Pass TDs':'TD','Pass INTs':'INT','Rush Yards':'YDS','Rush TDs':'TD','Comp %':'CMP%'};
     const value=(stats,key)=>key==='AVG'?avg(stats):stats?.[key];
-    const reviewNote=regular.some(row=>row.s===4)?'<p class="athlete-data-note">Season 4 statistics are under review and are excluded from the verified totals.</p>':'';
+    const archiveNote=regular.some(row=>row.s===4)?'<p class="athlete-data-note">Season 4 includes averaged fill-in games from the original archive. Counting totals are rounded to whole numbers.</p>':'';
     const noData=(title,detail)=>`<div class="athlete-empty"><h3>${esc(title)}</h3><p>${esc(detail)}</p></div>`;
     const card=(title,body,subtitle='')=>`<section class="athlete-card"><div class="athlete-card-heading"><h2>${esc(title)}</h2>${subtitle?`<span>${esc(subtitle)}</span>`:''}</div>${body}</section>`;
     function historyTeam(row) {
@@ -130,7 +130,7 @@ window.GFASeason = (() => {
     }
     function statTable(rows,cols,total,includeCurrent=false) {
       const currentRow=includeCurrent&&currentStats?`<tr><th scope="row">Season ${esc(season.id)}</th>${cols.map(key=>`<td>${stat(value(currentStats,key),key)}</td>`).join('')}</tr>`:'';
-      return `<div class="table-scroll"><table class="athlete-stats-table"><thead><tr><th scope="col">SEASON</th>${cols.map(key=>`<th scope="col"><abbr title="${esc(key==='AVG'?'Yards per reception':key)}">${esc(short[key]||key.toUpperCase())}</abbr></th>`).join('')}</tr></thead><tbody>${currentRow}${[...rows].reverse().map(row=>`<tr><th scope="row"><a href="#stats/${row.s}">Season ${row.s}${row.s===4?'*':''}</a></th>${row.s===4?`<td colspan="${cols.length}" class="athlete-pending-stats">Under review</td>`:cols.map(key=>`<td>${stat(value(row.stats,key),key)}</td>`).join('')}</tr>`).join('')}</tbody>${total?`<tfoot><tr><th scope="row">Verified total</th>${cols.map(key=>`<td>${stat(value(total,key),key)}</td>`).join('')}</tr></tfoot>`:''}</table></div>`;
+      return `<div class="table-scroll"><table class="athlete-stats-table"><thead><tr><th scope="col">SEASON</th>${cols.map(key=>`<th scope="col"><abbr title="${esc(key==='AVG'?'Yards per reception':key)}">${esc(short[key]||key.toUpperCase())}</abbr></th>`).join('')}</tr></thead><tbody>${currentRow}${[...rows].reverse().map(row=>`<tr><th scope="row"><a href="#stats/${row.s}">Season ${row.s}</a></th>${cols.map(key=>`<td>${stat(value(row.stats,key),key)}</td>`).join('')}</tr>`).join('')}</tbody>${total?`<tfoot><tr><th scope="row">Career total</th>${cols.map(key=>`<td>${stat(value(total,key),key)}</td>`).join('')}</tr></tfoot>`:''}</table></div>`;
     }
     const summaryKeys=p.position==='QB'?[['YDS','Pass Yards'],['TD','Pass TDs'],['INT','Pass INTs'],['CMP%','Comp %']]:['OL','LINE'].includes(p.position)?[['BLK','Blocks'],['SACK','Sacks'],['TKL','Tackles'],['GP','Games Played']]:[['REC','Receptions'],['YDS','Rec Yards'],['TD','Rec TDs'],['AVG','AVG']];
     const image=asset(p.portrait||p.model);
@@ -140,14 +140,14 @@ window.GFASeason = (() => {
     const overview=()=>{
       const careerSummary=archivedCareer?`<dl class="athlete-career-summary">${summaryKeys.map(([title,key])=>`<div><dt>${title}</dt><dd>${stat(value(archivedCareer,key),key)}</dd></div>`).join('')}</dl>`:noData('Career stats coming soon','No historical statistics are recorded under this player’s names.');
       const details=`<dl class="athlete-details"><div><dt>TEAM</dt><dd>${t?`<a href="${teamHref(t.id)}">${esc(t.name)}</a>`:'—'}</dd></div><div><dt>POSITION</dt><dd>${esc(position)}</dd></div>${hasNumber?`<div><dt>NUMBER</dt><dd>#${esc(p.number)}</dd></div>`:''}<div><dt>SEASON</dt><dd>${esc(label())}</dd></div>${oldNames.length?`<div><dt>HISTORY UNDER</dt><dd>${esc(oldNames.join(', '))}</dd></div>`:''}</dl>`;
-      const careerBody=careerSummary+(regular.length?statTable(regular,receiving,archivedCareer):'')+reviewNote+`<button class="athlete-text-button" type="button" data-show-profile-tab="1">View complete stats</button>`;
-      return `<div class="athlete-overview-grid"><div>${card(p.position==='WR'?'Career receiving':'Career statistics',careerBody,'VERIFIED SEASON ARCHIVE')}</div><aside>${card('Player information',details)}${card(label(),currentStats?`<p class="athlete-card-copy">${stat(currentStats['Games Played'])} games recorded this season.</p>`:noData('Ready for Season '+season.id,'Player stats and game performances will appear here as results are recorded.'))}</aside></div>`;
+      const careerBody=careerSummary+(regular.length?statTable(regular,receiving,archivedCareer):'')+archiveNote+`<button class="athlete-text-button" type="button" data-show-profile-tab="1">View complete stats</button>`;
+      return `<div class="athlete-overview-grid"><div>${card(p.position==='WR'?'Career receiving':'Career statistics',careerBody,'REGULAR SEASON · S1–4')}</div><aside>${card('Player information',details)}${card(label(),currentStats?`<p class="athlete-card-copy">${stat(currentStats['Games Played'])} games recorded this season.</p>`:noData('Ready for Season '+season.id,'Player stats and game performances will appear here as results are recorded.'))}</aside></div>`;
     };
     function drawStats() {
       const category=document.querySelector('#athlete-stat-category').value,stage=document.querySelector('#athlete-stat-stage').value;
       const rows=stage==='playoffs'?playoffs:regular,total=stage==='playoffs'?combine(playoffs.map(row=>row.stats)):archivedCareer;
       const cols=category==='Receiving'?receiving:categories[category];
-      document.querySelector('#athlete-stat-table').innerHTML=rows.length||stage==='players'&&currentStats?statTable(rows,cols,total,stage==='players')+(stage==='players'?reviewNote:''):noData('Statistics coming soon','No '+(stage==='playoffs'?'playoff':'regular-season')+' statistics have been recorded under this player’s names.');
+      document.querySelector('#athlete-stat-table').innerHTML=rows.length||stage==='players'&&currentStats?statTable(rows,cols,total,stage==='players')+(stage==='players'?archiveNote:''):noData('Statistics coming soon','No '+(stage==='playoffs'?'playoff':'regular-season')+' statistics have been recorded under this player’s names.');
     }
     function draw(tab) {
       const content=document.querySelector('#player-profile-content');
@@ -165,7 +165,7 @@ window.GFASeason = (() => {
       }
       if(tab===3){
         const rows=[...regular].reverse();
-        const careerTable=`<div class="table-scroll"><table class="athlete-stats-table"><thead><tr><th>SEASON</th><th>TEAM</th><th>GP</th><th>REC</th><th>YDS</th><th>TD</th></tr></thead><tbody><tr><th scope="row">Season ${esc(season.id)}</th><td>${t?`<a href="${teamHref(t.id)}">${esc(t.name)}</a>`:'—'}</td>${['Games Played','Receptions','Rec Yards','Rec TDs'].map(key=>`<td>${stat(currentStats?.[key],key)}</td>`).join('')}</tr>${rows.map(row=>`<tr><th scope="row">Season ${row.s}${row.s===4?'*':''}</th><td>${historyTeam(row)}</td>${row.s===4?'<td colspan="4" class="athlete-pending-stats">Under review</td>':['Games Played','Receptions','Rec Yards','Rec TDs'].map(key=>`<td>${stat(row.stats[key],key)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>${reviewNote}`;
+        const careerTable=`<div class="table-scroll"><table class="athlete-stats-table"><thead><tr><th>SEASON</th><th>TEAM</th><th>GP</th><th>REC</th><th>YDS</th><th>TD</th></tr></thead><tbody><tr><th scope="row">Season ${esc(season.id)}</th><td>${t?`<a href="${teamHref(t.id)}">${esc(t.name)}</a>`:'—'}</td>${['Games Played','Receptions','Rec Yards','Rec TDs'].map(key=>`<td>${stat(currentStats?.[key],key)}</td>`).join('')}</tr>${rows.map(row=>`<tr><th scope="row">Season ${row.s}</th><td>${historyTeam(row)}</td>${['Games Played','Receptions','Rec Yards','Rec TDs'].map(key=>`<td>${stat(row.stats[key],key)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>${archiveNote}`;
         content.innerHTML=card('Career history',careerTable,'REGULAR SEASON')+(oldNames.length?`<p class="athlete-identity-note">Historical records under ${esc(oldNames.join(', '))} are linked to ${esc(p.name)}.</p>`:'');
       }
       if(tab===4)content.innerHTML=card('Player awards',oldAwards.length||newAwards.length?`<div class="award-grid">${oldAwards.map(awardCard).join('')}${newAwards.map(award=>`<article class="award"><span class="tag">${esc(label())}</span><h3>${esc(award.label)}</h3><p>${esc(award.detail||'')}</p></article>`).join('')}</div>`:noData('No awards recorded','Player awards will appear here when announced.'));
