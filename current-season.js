@@ -14,7 +14,7 @@ window.GFASeason = (() => {
   const teamName = id => team(id)?.name || 'Team to be announced';
   const teamHref = id => `#team/${enc(season.id)}/${enc(id)}`;
   const playerHref = p => `#player/${enc(p.id || p.name)}`;
-  const logo = t => t?.logo ? `<img src="${esc(asset(t.logo))}" alt="${esc(t.name)} logo">` : `<span aria-hidden="true">${esc(initials(t?.name || 'GFA'))}</span>`;
+  const logo = t => t?.logo ? `<img src="${esc(asset(t.logo))}" alt="${esc(t.name)} logo" loading="lazy" decoding="async">` : `<span aria-hidden="true">${esc(initials(t?.name || 'GFA'))}</span>`;
   const asset = value => /^(?:https?:\/\/|\/?assets\/)/i.test(value || '') ? value : '';
   const colors = t => {
     const color = value => /^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i.test(value || '') ? value : null;

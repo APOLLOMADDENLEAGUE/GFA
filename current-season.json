@@ -11,6 +11,96 @@
         "primary": "#ff0066",
         "secondary": "#09090b"
       }
+    },
+    {
+      "id": "fang",
+      "name": "Fang",
+      "logo": "assets/teams/fang.webp",
+      "colors": {
+        "primary": "#8c18ff",
+        "secondary": "#15091e"
+      }
+    },
+    {
+      "id": "hexxed",
+      "name": "Hexxed",
+      "logo": "assets/teams/hexxed.webp",
+      "colors": {
+        "primary": "#e21c2a",
+        "secondary": "#17080d"
+      }
+    },
+    {
+      "id": "spartans",
+      "name": "Spartans",
+      "logo": "assets/teams/spartans.webp",
+      "colors": {
+        "primary": "#e3272b",
+        "secondary": "#19090c"
+      }
+    },
+    {
+      "id": "hellhounds",
+      "name": "Hellhounds",
+      "logo": "assets/teams/hellhounds.webp",
+      "colors": {
+        "primary": "#ff440b",
+        "secondary": "#190a08"
+      }
+    },
+    {
+      "id": "mambas",
+      "name": "Mambas",
+      "logo": "assets/teams/mambas.webp",
+      "colors": {
+        "primary": "#ff1128",
+        "secondary": "#111216"
+      }
+    },
+    {
+      "id": "the-burger-people",
+      "name": "The Burger People",
+      "logo": "assets/teams/the-burger-people.webp",
+      "colors": {
+        "primary": "#ffbc00",
+        "secondary": "#1a1007"
+      }
+    },
+    {
+      "id": "rat-pack",
+      "name": "Rat Pack",
+      "logo": "assets/teams/rat-pack.webp",
+      "colors": {
+        "primary": "#c78c3d",
+        "secondary": "#102434"
+      }
+    },
+    {
+      "id": "red-clover",
+      "name": "Red Clover",
+      "logo": "assets/teams/red-clover.webp",
+      "colors": {
+        "primary": "#cf2439",
+        "secondary": "#1a090e"
+      }
+    },
+    {
+      "id": "alien",
+      "name": "Alien",
+      "logo": "assets/teams/alien.webp",
+      "colors": {
+        "primary": "#164aff",
+        "secondary": "#08152e"
+      }
+    },
+    {
+      "id": "ghost",
+      "name": "Ghost",
+      "logo": "assets/teams/ghost.webp",
+      "colors": {
+        "primary": "#5bff00",
+        "secondary": "#081320"
+      }
     }
   ],
   "players": [
