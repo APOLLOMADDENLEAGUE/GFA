@@ -114,6 +114,14 @@
       "position": "WR",
       "number": 11,
       "portrait": "assets/players/csn-headshot.webp"
+    },
+    {
+      "id": "icczz",
+      "name": "Icczz",
+      "teamId": "pink-kangaroos",
+      "position": "RB",
+      "number": 4,
+      "portrait": "assets/players/icczz-headshot.webp"
     }
   ],
   "games": [],
