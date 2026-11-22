@@ -110,6 +110,15 @@
         "primary": "#ffc400",
         "secondary": "#111114"
       }
+    },
+    {
+      "id": "gridiron-football-team",
+      "name": "Gridiron Football Team",
+      "logo": "assets/teams/gridiron-football-team.webp",
+      "colors": {
+        "primary": "#ff7900",
+        "secondary": "#3c0f56"
+      }
     }
   ],
   "players": [
