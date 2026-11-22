@@ -2,7 +2,17 @@
   "id": "I",
   "name": "GFA Season I",
   "status": "preseason",
-  "teams": [],
+  "teams": [
+    {
+      "id": "pink-kangaroos",
+      "name": "Pink Kangaroos",
+      "logo": "assets/teams/pink-kangaroos.webp",
+      "colors": {
+        "primary": "#ff0066",
+        "secondary": "#09090b"
+      }
+    }
+  ],
   "players": [],
   "games": [],
   "gameLogs": [],

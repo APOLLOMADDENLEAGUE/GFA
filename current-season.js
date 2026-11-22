@@ -53,8 +53,12 @@ window.GFASeason = (() => {
   }
   function teamsMarkup() {
     if (!season.teams.length) return empty('Teams coming soon', `Confirmed ${label()} teams and rosters will be announced here.`);
-    return `<div class="team-grid season-team-grid">${season.teams.map(t=>`<a class="team-card season-team-card" href="${teamHref(t.id)}" style="${colors(t)}"><span class="season-logo">${logo(t)}</span><h3>${esc(t.name)}</h3><p>${season.players.filter(p=>p.teamId===t.id).length} players · ${esc(label())}</p><span class="season-card-link">Roster & schedule</span></a>`).join('')}</div>`;
+    return `<div class="team-grid season-team-grid">${season.teams.map(t=>{
+      const count=season.players.filter(p=>p.teamId===t.id).length;
+      return `<a class="team-card season-team-card" href="${teamHref(t.id)}" style="${colors(t)}"><span class="season-card-label">${esc(label())}</span><span class="season-card-art"><span class="season-logo">${logo(t)}</span></span><h3>${esc(t.name)}</h3><div class="season-card-footer"><p>${count?`${count} players`:'Roster coming soon'}</p><span class="season-card-link">View team</span></div></a>`;
+    }).join('')}</div>`;
   }
+
   function tabs(active) {
     return `<nav class="season-nav" aria-label="${esc(label())} navigation">${[['home','Overview'],[`games/${season.id}`,'Schedule'],[`teams/${season.id}`,'Teams'],[`standings/${season.id}`,'Standings'],[`stats/${season.id}`,'Stats']].map(([href,text])=>`<a href="#${href}" ${active===text?'aria-current="page"':''}>${text}</a>`).join('')}</nav>`;
   }
@@ -69,7 +73,7 @@ window.GFASeason = (() => {
     const draw=()=>{const id=document.querySelector('#schedule-team').value,status=document.querySelector('#schedule-status').value;const games=season.games.filter(g=>(!id||g.homeTeamId===id||g.awayTeamId===id)&&(status==='all'||(status==='final'?final(g):!final(g))));document.querySelector('#season-schedule').innerHTML=games.length?scheduleMarkup(games,id):empty(season.games.length?'No games match these filters':'Schedule coming soon',season.games.length?'Choose another team or status to see more games.':`${label()} matchups and game times will appear here once announced.`);};
     document.querySelector('#schedule-team').onchange=draw;document.querySelector('#schedule-status').onchange=draw;draw();
   }
-  function teamsPageCurrent() { main.innerHTML=head(label(),'Teams','Explore each team’s roster and full season schedule.')+tabs('Teams')+`<div class="wrap">${teamsMarkup()}</div>`; }
+  function teamsPageCurrent() { main.innerHTML=head(label(),'Teams','Meet the teams of GFA Season I.')+tabs('Teams')+`<div class="wrap">${teamsMarkup()}</div>`; }
   function standingsPageCurrent() {
     const rows=records();
     main.innerHTML=head(label(),'Standings','Regular-season records and results.')+tabs('Standings')+`<div class="wrap">${rows.length?`<div class="panel table-scroll"><table><thead><tr><th>TEAM</th><th>W</th><th>L</th><th>T</th><th>PF</th><th>PA</th><th>DIFF</th></tr></thead><tbody>${rows.map(r=>`<tr><td><a href="${teamHref(r.team.id)}">${esc(r.team.name)}</a></td>${[r.w,r.l,r.t,r.pf,r.pa,r.pf-r.pa].map(n=>`<td>${fmt(n)}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="notes">Ordered by winning percentage, then point differential. Official playoff tiebreakers will be applied when confirmed.</p>`:empty('Standings coming soon','The standings will be ready when the Season I teams are confirmed.')}</div>`;
@@ -82,9 +86,14 @@ window.GFASeason = (() => {
   function teamPageCurrent(id) {
     const t=team(id)||season.teams.find(t=>t.name===id);if(!t)return missing();
     const roster=season.players.filter(p=>p.teamId===t.id),r=records().find(r=>r.team.id===t.id);
-    main.innerHTML=`<section class="team-profile-header" style="${colors(t)}"><a class="profile-back" href="#teams/${enc(season.id)}">All ${esc(label())} teams</a><div class="team-profile-heading"><span class="season-logo">${logo(t)}</span><div><div class="eyebrow">${esc(label())}</div><h1>${esc(t.name)}</h1><p>${r.w}–${r.l}${r.t?`–${r.t}`:''} · ${esc(label())}</p></div></div></section><div class="wrap"><section><div class="section-head"><h2>FULL ROSTER</h2><span class="tag">${roster.length} PLAYERS</span></div>${roster.length?`<div class="panel table-scroll"><table><thead><tr><th>PLAYER</th><th>NUMBER</th><th>POSITION</th></tr></thead><tbody>${roster.map(p=>`<tr><td><a class="roster-player" href="${playerHref(p)}">${asset(p.model)?`<img src="${esc(asset(p.model))}" alt="" loading="lazy">`:''}${esc(p.name)}</a></td><td>${p.number===undefined||p.number===null?'—':esc(p.number)}</td><td>${esc(p.position||'—')}</td></tr>`).join('')}</tbody></table></div>`:empty('Roster coming soon','The confirmed roster will appear here when announced.')}</section><section class="season-section"><div class="section-head"><h2>FULL SEASON SCHEDULE</h2></div>${scheduleMarkup(season.games.filter(g=>g.homeTeamId===t.id||g.awayTeamId===t.id),t.id)}</section></div>`;
+    const games=season.games.filter(g=>g.homeTeamId===t.id||g.awayTeamId===t.id);
+    const words=t.name.trim().split(/\s+/),last=words.pop();
+    const status=season.status==='preseason'?'Preseason':season.status==='complete'?'Season complete':'Regular season';
+    const summary=r.gp?`<div class="team-results-strip" aria-label="Season record">${[['RECORD',`${r.w}–${r.l}${r.t?`–${r.t}`:''}`],['GAMES PLAYED',r.gp],['POINTS FOR',r.pf],['POINTS AGAINST',r.pa]].map(([title,value])=>`<div><span>${title}</span><strong>${esc(value)}</strong></div>`).join('')}</div>`:'';
+    main.innerHTML=`<article class="team-profile" style="${colors(t)}"><section class="team-profile-hero"><div class="team-profile-wrap"><a class="profile-back" href="#teams/${enc(season.id)}">All ${esc(label())} teams</a><div class="team-profile-heading"><div class="team-profile-identity"><div class="team-profile-meta"><span>${esc(label())}</span><span class="team-profile-status">${esc(status)}</span></div><h1>${words.length?esc(words.join(' '))+'<br>':''}<span>${esc(last)}</span></h1><p>GRIDIRON 7V7</p></div><div class="team-profile-crest">${logo(t)}</div></div></div></section><div class="team-profile-content wrap">${summary}<div class="team-profile-sections"><section aria-labelledby="team-roster-title"><div class="section-head"><h2 id="team-roster-title">ROSTER</h2><span class="tag">${roster.length?`${roster.length} PLAYERS`:'COMING SOON'}</span></div>${roster.length?`<div class="panel table-scroll"><table><thead><tr><th>PLAYER</th><th>NUMBER</th><th>POSITION</th></tr></thead><tbody>${roster.map(p=>`<tr><td><a class="roster-player" href="${playerHref(p)}">${asset(p.model)?`<img src="${esc(asset(p.model))}" alt="" loading="lazy">`:''}${esc(p.name)}</a></td><td>${p.number===undefined||p.number===null?'—':esc(p.number)}</td><td>${esc(p.position||'—')}</td></tr>`).join('')}</tbody></table></div>`:`<div class="team-profile-pending"><span class="team-pending-label">THE PLAYERS</span><h3>Roster coming soon.</h3><p>The ${esc(t.name)} roster and player positions will appear here when announced.</p></div>`}</section><section aria-labelledby="team-schedule-title"><div class="section-head"><h2 id="team-schedule-title">SCHEDULE</h2><span class="tag">SEASON ${esc(season.id)}</span></div>${games.length?scheduleMarkup(games,t.id):`<div class="team-profile-pending"><span class="team-pending-label">THE MATCHUPS</span><h3>Schedule coming soon.</h3><p>Opponents, game times, and results will be added here for ${esc(label())}.</p></div>`}</section></div></div></article>`;
     document.title=`${t.name} | ${label()}`;
   }
+
   function playerPageCurrent(identifier) {
     const normal=s=>String(s||'').toLowerCase();
     const p=season.players.find(p=>p.id===identifier||normal(p.name)===normal(identifier));
