@@ -122,6 +122,14 @@
       "position": "RB",
       "number": 4,
       "portrait": "assets/players/icczz-headshot.webp"
+    },
+    {
+      "id": "lunar",
+      "name": "Lunar",
+      "teamId": "pink-kangaroos",
+      "position": "QB",
+      "number": null,
+      "portrait": "assets/players/lunar-headshot.webp"
     }
   ],
   "games": [],

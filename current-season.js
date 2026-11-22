@@ -119,9 +119,11 @@ window.GFASeason = (() => {
     const avg=stats=>stats&&num(stats.Receptions)?num(stats['Rec Yards'])/num(stats.Receptions):null;
     const receiving=['Games Played','Receptions','Rec Yards','Rec TDs','AVG'];
     const isRunningBack=p.position==='RB';
-    const careerColumns=isRunningBack?['Games Played','Rush Yards','Rush TDs','Receptions','Rec Yards','Rec TDs']:['Games Played','Receptions','Rec Yards','Rec TDs'];
-    const short={'Games Played':'GP','Receptions':'REC','Rec Yards':'YDS','Rec TDs':'TD','AVG':'AVG','Pass Yards':'YDS','Pass TDs':'TD','Pass INTs':'INT','Rush Yards':'YDS','Rush TDs':'TD','Comp %':'CMP%'};
+    const isQuarterback=p.position==='QB';
+    const careerColumns=isQuarterback?categories.Passing:isRunningBack?['Games Played','Rush Yards','Rush TDs','Receptions','Rec Yards','Rec TDs']:['Games Played','Receptions','Rec Yards','Rec TDs'];
+    const short={'Games Played':'GP','Receptions':'REC','Rec Yards':'YDS','Rec TDs':'TD','AVG':'AVG','Pass Yards':'YDS','Pass TDs':'TD','Pass INTs':'INT','Rush Yards':'YDS','Rush TDs':'TD','Comp %':'CMP%','Completions':'CMP','Attempts':'ATT'};
     if(isRunningBack)Object.assign(short,{'Rush Yards':'RUSH YDS','Rush TDs':'RUSH TD','Rec Yards':'REC YDS','Rec TDs':'REC TD'});
+    if(isQuarterback)Object.assign(short,{'Rush Yards':'RUSH YDS','Rush TDs':'RUSH TD'});
     const value=(stats,key)=>key==='AVG'?avg(stats):stats?.[key];
     const archiveNote=regular.some(row=>row.s===4)?'<p class="athlete-data-note">Season 4 includes averaged fill-in games from the original archive. Counting totals are rounded to whole numbers.</p>':'';
     const noData=(title,detail)=>`<div class="athlete-empty"><h3>${esc(title)}</h3><p>${esc(detail)}</p></div>`;
@@ -143,8 +145,8 @@ window.GFASeason = (() => {
     const overview=()=>{
       const careerSummary=archivedCareer?`<dl class="athlete-career-summary">${summaryKeys.map(([title,key])=>`<div><dt>${title}</dt><dd>${stat(value(archivedCareer,key),key)}</dd></div>`).join('')}</dl>`:noData('Career stats coming soon','No historical statistics are recorded under this player’s names.');
       const details=`<dl class="athlete-details"><div><dt>TEAM</dt><dd>${t?`<a href="${teamHref(t.id)}">${esc(t.name)}</a>`:'—'}</dd></div><div><dt>POSITION</dt><dd>${esc(position)}</dd></div>${hasNumber?`<div><dt>NUMBER</dt><dd>#${esc(p.number)}</dd></div>`:''}<div><dt>SEASON</dt><dd>${esc(label())}</dd></div>${oldNames.length?`<div><dt>HISTORY UNDER</dt><dd>${esc(oldNames.join(', '))}</dd></div>`:''}</dl>`;
-      const careerBody=careerSummary+(regular.length?statTable(regular,isRunningBack?careerColumns:receiving,archivedCareer):'')+archiveNote+`<button class="athlete-text-button" type="button" data-show-profile-tab="1">View complete stats</button>`;
-      return `<div class="athlete-overview-grid"><div>${card(isRunningBack?'Career rushing & receiving':p.position==='WR'?'Career receiving':'Career statistics',careerBody,'REGULAR SEASON · S1–4')}</div><aside>${card('Player information',details)}${card(label(),currentStats?`<p class="athlete-card-copy">${stat(currentStats['Games Played'])} games recorded this season.</p>`:noData('Ready for Season '+season.id,'Player stats and game performances will appear here as results are recorded.'))}</aside></div>`;
+      const careerBody=careerSummary+(regular.length?statTable(regular,isQuarterback||isRunningBack?careerColumns:receiving,archivedCareer):'')+archiveNote+`<button class="athlete-text-button" type="button" data-show-profile-tab="1">View complete stats</button>`;
+      return `<div class="athlete-overview-grid"><div>${card(isQuarterback?'Career passing':isRunningBack?'Career rushing & receiving':p.position==='WR'?'Career receiving':'Career statistics',careerBody,'REGULAR SEASON · S1–4')}</div><aside>${card('Player information',details)}${card(label(),currentStats?`<p class="athlete-card-copy">${stat(currentStats['Games Played'])} games recorded this season.</p>`:noData('Ready for Season '+season.id,'Player stats and game performances will appear here as results are recorded.'))}</aside></div>`;
     };
     function drawStats() {
       const category=document.querySelector('#athlete-stat-category').value,stage=document.querySelector('#athlete-stat-stage').value;
@@ -164,7 +166,7 @@ window.GFASeason = (() => {
       }
       if(tab===2){
         const logs=season.gameLogs.filter(log=>log.playerId===p.id);
-        const logColumns=isRunningBack?['Rush Yards','Rush TDs','Receptions','Rec Yards','Rec TDs','Tackles','INTs']:['Receptions','Rec Yards','Rec TDs','Tackles','INTs'];
+        const logColumns=isQuarterback?['Completions','Attempts','Comp %','Pass Yards','Pass TDs','Pass INTs','Rush Yards','Rush TDs']:isRunningBack?['Rush Yards','Rush TDs','Receptions','Rec Yards','Rec TDs','Tackles','INTs']:['Receptions','Rec Yards','Rec TDs','Tackles','INTs'];
         content.innerHTML=card('Game log',logs.length?`<div class="table-scroll"><table class="athlete-stats-table"><thead><tr><th>GAME</th>${logColumns.map(key=>`<th><abbr title="${esc(key)}">${esc(key==='INTs'?'INT':short[key]||key.toUpperCase())}</abbr></th>`).join('')}</tr></thead><tbody>${logs.map(log=>{const g=season.games.find(g=>g.id===log.gameId),opponent=g?(g.homeTeamId===p.teamId?g.awayTeamId:g.homeTeamId):null;return `<tr><th scope="row">${g?`Week ${esc(g.week||'—')} · ${esc(teamName(opponent))}`:'Game'}</th>${logColumns.map(key=>`<td>${stat(log.stats?.[key],key)}</td>`).join('')}</tr>`;}).join('')}</tbody></table></div>`:noData('No Season '+season.id+' games recorded yet','Individual game performances will appear here after results are recorded.'),label());
       }
       if(tab===3){
@@ -177,7 +179,7 @@ window.GFASeason = (() => {
     }
     const buttons=[...document.querySelectorAll('[data-profile-tab]')];
     buttons.forEach((button,i)=>{button.onclick=()=>draw(i);button.onkeydown=e=>{let index;if(e.key==='ArrowRight')index=(i+1)%buttons.length;else if(e.key==='ArrowLeft')index=(i+buttons.length-1)%buttons.length;else if(e.key==='Home')index=0;else if(e.key==='End')index=buttons.length-1;else return;e.preventDefault();draw(index);buttons[index].focus();};});
-    draw(0);document.title=`${p.name} #${p.number} | ${t?.name||label()} | GFA`;
+    draw(0);document.title=`${p.name}${hasNumber?' #'+p.number:''} | ${t?.name||label()} | GFA`;
   }
   function playerPageCurrent(identifier) {
     const normal=s=>String(s||'').toLowerCase();
