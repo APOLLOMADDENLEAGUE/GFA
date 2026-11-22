@@ -101,6 +101,15 @@
         "primary": "#5bff00",
         "secondary": "#081320"
       }
+    },
+    {
+      "id": "nobles",
+      "name": "Nobles",
+      "logo": "assets/teams/nobles.webp",
+      "colors": {
+        "primary": "#ffc400",
+        "secondary": "#111114"
+      }
     }
   ],
   "players": [
