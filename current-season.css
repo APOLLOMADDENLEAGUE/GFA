@@ -56,3 +56,79 @@
 @media(max-width:1000px){.team-profile-hero .team-profile-heading{min-height:300px;gap:20px}.team-profile .team-profile-heading h1{font-size:clamp(58px,7.5vw,80px)}.team-profile-meta{gap:12px}.team-profile-sections{gap:22px}}
 @media(max-width:700px){.season-card-art{height:210px}.season-team-card h3{font-size:36px}.team-profile-wrap{padding-top:24px;padding-bottom:24px}.team-profile-hero .team-profile-heading{grid-template-columns:1fr;gap:14px;padding:8px 0 12px}.team-profile-identity{order:1}.team-profile-crest{order:0;max-width:330px;justify-self:center;aspect-ratio:1.8}.team-profile-crest img{max-height:200px}.team-profile-meta{font-size:14px;gap:12px}.team-profile .team-profile-heading h1{font-size:clamp(48px,13vw,80px);margin:24px 0 18px}.team-profile .team-profile-heading p{font-size:14px;letter-spacing:2px}.team-profile-content{padding-top:32px;padding-bottom:40px}.team-profile-sections{grid-template-columns:1fr;gap:34px}.team-profile .section-head h2{font-size:30px}.team-profile-pending{min-height:180px;padding:24px}.team-profile-pending h3{font-size:29px}.team-results-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.team-results-strip>div{padding:20px;border-bottom:1px solid #ffffff26}.team-results-strip>div:nth-child(2n){border-right:0}.team-results-strip>div:nth-last-child(-n+2){border-bottom:0}}
 @media(prefers-reduced-motion:reduce){.season-team-card{transition:none}.season-team-card:hover{transform:none}}
+
+/* Sports player profiles for current-season rosters. */
+.athlete-page{color:#242424;background:#f0f1f3;min-height:650px;--athlete-line:#e3e4e7;--athlete-muted:#64666d}
+.athlete-header{background:#fff;border-top:4px solid var(--team-primary);border-bottom:1px solid var(--athlete-line)}
+.athlete-header-inner{max-width:1420px;margin:auto;padding:20px 5% 0}
+.athlete-back{font-size:14px;color:#65666c;text-decoration:underline;text-underline-offset:4px;display:inline-block;margin-bottom:12px}
+.athlete-back:hover{color:#222}
+.athlete-header-row{display:grid;grid-template-columns:240px minmax(170px,1fr) minmax(280px,370px);align-items:center;gap:30px;min-height:240px}
+.athlete-portrait{align-self:end;width:240px;height:240px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;background:radial-gradient(ellipse at 50% 90%,color-mix(in srgb,var(--team-primary) 9%,transparent),transparent 70%)}
+.athlete-portrait img{display:block;width:100%;height:100%;object-fit:contain;object-position:center bottom}
+.athlete-portrait>span{font:800 100px 'Barlow Condensed',Impact,sans-serif;color:var(--team-primary)}
+.athlete-identity{min-width:0;padding:12px 0 26px}
+.athlete-team{display:inline-flex;align-items:center;gap:10px;font-size:16px;font-weight:600;color:#44454a}
+.athlete-team>span{width:38px;height:30px;display:inline-flex;align-items:center;justify-content:center}
+.athlete-team img{width:100%;height:100%;object-fit:contain}
+.athlete-identity h1{font-family:Barlow,Arial,sans-serif;font-size:clamp(42px,4.5vw,64px);font-weight:800;line-height:1.05;letter-spacing:-1.5px;margin:12px 0 14px;text-transform:none;overflow-wrap:anywhere}
+.athlete-position{display:flex;gap:0;align-items:center;font-size:18px;color:#55565d}
+.athlete-position>span+span{border-left:1px solid #c8c8ce;margin-left:12px;padding-left:12px}
+.athlete-alias{font-size:14px;color:var(--athlete-muted);margin:14px 0 0}
+.athlete-season-summary{align-self:center;padding:20px 0 24px 28px;border-left:1px solid var(--athlete-line)}
+.athlete-season-summary h2{display:flex;justify-content:space-between;align-items:center;gap:16px;font-family:Barlow,Arial,sans-serif;font-size:14px;font-weight:700;line-height:1.4;margin:0 0 20px;letter-spacing:.5px}
+.athlete-season-summary h2 span{font-size:14px;font-weight:500;color:var(--athlete-muted);letter-spacing:0}
+.athlete-season-summary dl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:0}
+.athlete-season-summary dt{font-size:14px;color:var(--athlete-muted)}
+.athlete-season-summary dd{font-size:28px;font-weight:700;line-height:1.2;letter-spacing:-.5px;margin:6px 0 0}
+.athlete-season-summary p{font-size:14px;color:var(--athlete-muted);margin:18px 0 0}
+.athlete-tabbar{background:#fff;border-bottom:1px solid #d7d9de}
+.athlete-tabbar .profile-tabbar{max-width:1420px;margin:auto;background:transparent;border:0;padding:0 5%;gap:30px}
+.athlete-tabbar .profile-tabbar button{font-family:Barlow,Arial,sans-serif;font-size:16px;color:#5e6068;padding:18px 0 16px}
+.athlete-tabbar .profile-tabbar button[aria-selected=true]{color:#171719;border-color:var(--team-primary);font-weight:700}
+.athlete-tabbar .profile-tabbar button:hover{color:#171719}
+.athlete-content{max-width:1420px;margin:auto;padding:30px 5% 52px}
+.athlete-overview-grid{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(260px,1fr);gap:24px;align-items:start}
+.athlete-overview-grid>div,.athlete-overview-grid>aside{min-width:0}
+.athlete-card{background:#fff;border:1px solid var(--athlete-line);border-radius:8px;overflow:hidden;margin:0 0 22px}
+.athlete-card-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 22px;border-bottom:1px solid var(--athlete-line)}
+.athlete-card-heading h2{font:700 20px/1.2 Barlow,Arial,sans-serif;letter-spacing:-.3px;text-transform:none;margin:0}
+.athlete-card-heading>span{font-size:14px;color:var(--athlete-muted);white-space:nowrap}
+.athlete-career-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin:0;padding:24px 8px}
+.athlete-career-summary>div{padding:0 14px;border-right:1px solid var(--athlete-line);min-width:0}
+.athlete-career-summary>div:last-child{border-right:0}
+.athlete-career-summary dt{font-size:14px;color:var(--athlete-muted);margin:0 0 7px}
+.athlete-career-summary dd{font-size:clamp(18px,2.1vw,29px);font-weight:700;letter-spacing:-.7px;margin:0;line-height:1.2;overflow-wrap:anywhere}
+.athlete-stats-table{font-size:14px}
+.athlete-stats-table th,.athlete-stats-table td{padding:14px 16px;border:0;border-bottom:1px solid #ebecf0}
+.athlete-stats-table thead th{background:#fafafa;color:#62646b;font-size:14px;font-weight:600;letter-spacing:0}
+.athlete-stats-table tbody th{background:white;font-size:14px;font-weight:500;color:#303138;letter-spacing:0;white-space:nowrap}
+.athlete-stats-table th a,.athlete-stats-table td a{color:#33343b;font-weight:500;text-decoration:underline;text-underline-offset:3px;text-decoration-color:#c9cad0}
+.athlete-stats-table th a:hover,.athlete-stats-table td a:hover{text-decoration-color:var(--team-primary);color:#111}
+.athlete-stats-table tbody tr:nth-child(even),.athlete-stats-table tbody tr:nth-child(even) th{background:#fafafa}
+.athlete-stats-table tfoot th,.athlete-stats-table tfoot td{background:#f4f4f6;font-size:14px;font-weight:700;color:#25262c;letter-spacing:0}
+.athlete-stats-table abbr{text-decoration:none;cursor:help}
+.athlete-data-note{font-size:14px;color:#6b626a;padding:16px 22px 0;margin:0;line-height:1.5}
+.athlete-details{margin:0;padding:4px 22px}
+.athlete-details>div{padding:15px 0;display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid var(--athlete-line)}
+.athlete-details>div:last-child{border-bottom:0}
+.athlete-details dt{font-size:14px;color:var(--athlete-muted)}
+.athlete-details dd{font-size:14px;color:#25262b;font-weight:600;margin:0;text-align:right}
+.athlete-details dd a{text-decoration:underline;text-underline-offset:3px}
+.athlete-empty{padding:28px 22px}
+.athlete-empty h3{font:600 19px/1.3 Barlow,Arial,sans-serif;text-transform:none;margin:0 0 10px}
+.athlete-empty p{font-size:16px;line-height:1.6;color:var(--athlete-muted);margin:0;max-width:550px}
+.athlete-text-button{display:block;padding:20px 22px;border:0;background:transparent;color:#34353c;text-decoration:underline;text-decoration-color:var(--team-primary);text-underline-offset:5px;font-size:14px;font-weight:600;cursor:pointer;text-align:left}
+.athlete-text-button:hover{color:#000}
+.athlete-filters{display:flex;gap:20px;align-items:center;flex-wrap:wrap;padding:20px 22px}
+.athlete-filters label{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--athlete-muted)}
+.athlete-filters select{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='none' stroke='%23637086' stroke-width='1.8' d='m1 1 5 5 5-5'/%3E%3C/svg%3E") no-repeat right 12px center;border:1px solid #d6d7dc;color:#25262c;border-radius:4px;padding:10px 36px 10px 12px;font-size:16px;min-height:44px}
+.athlete-identity-note{font-size:14px;color:var(--athlete-muted);margin-top:12px}
+.athlete-card-copy{font-size:16px;padding:22px;margin:0}
+.athlete-card .award-grid{padding:20px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.athlete-page a:focus-visible,.athlete-page button:focus-visible,.athlete-page select:focus-visible{outline:3px solid var(--team-primary);outline-offset:4px}
+@media(max-width:1100px){.athlete-header-row{grid-template-columns:190px minmax(170px,1fr) minmax(250px,1fr);gap:22px;min-height:215px}.athlete-portrait{width:190px;height:215px}.athlete-season-summary{padding-left:22px}.athlete-overview-grid{grid-template-columns:minmax(0,1.7fr) minmax(240px,1fr)}.athlete-card-heading{align-items:flex-start;flex-direction:column;gap:8px}.athlete-career-summary dd{font-size:23px}}
+@media(max-width:800px){.athlete-header-row{grid-template-columns:180px 1fr;gap:20px}.athlete-season-summary{grid-column:1/-1;border-left:0;border-top:1px solid var(--athlete-line);padding:18px 0 22px;align-self:stretch}.athlete-season-summary h2{margin-bottom:14px}.athlete-season-summary p{margin-top:12px}.athlete-portrait{width:180px;height:190px}.athlete-identity{padding-bottom:20px}.athlete-overview-grid{grid-template-columns:1fr}.athlete-overview-grid>aside{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.athlete-career-summary dd{font-size:27px}}
+@media(max-width:500px){.athlete-header-inner{padding-top:16px}.athlete-back{margin-bottom:14px}.athlete-header-row{grid-template-columns:120px minmax(0,1fr);gap:0 15px}.athlete-portrait{width:120px;height:155px}.athlete-identity{padding:4px 0 16px}.athlete-team{font-size:14px;gap:7px}.athlete-team>span{width:29px;height:26px}.athlete-identity h1{font-size:43px;margin:10px 0 12px}.athlete-position{font-size:16px}.athlete-position>span+span{margin-left:9px;padding-left:9px}.athlete-alias{font-size:14px;line-height:1.4;margin-top:11px}.athlete-season-summary{margin-top:12px;padding:16px 0 20px}.athlete-season-summary dd{font-size:26px}.athlete-tabbar .profile-tabbar{gap:24px}.athlete-tabbar .profile-tabbar button{font-size:15px;flex-shrink:0}.athlete-content{padding-top:22px;padding-bottom:32px}.athlete-overview-grid>aside{display:block}.athlete-card-heading{padding:18px;gap:7px}.athlete-card-heading h2{font-size:20px}.athlete-career-summary{padding:20px 4px;grid-template-columns:repeat(2,minmax(0,1fr));row-gap:22px}.athlete-career-summary>div{padding:0 16px}.athlete-career-summary>div:nth-child(2n){border-right:0}.athlete-career-summary dd{font-size:26px;letter-spacing:-.5px}.athlete-stats-table th,.athlete-stats-table td{padding:13px 12px}.athlete-empty,.athlete-details{padding-left:18px;padding-right:18px}.athlete-data-note{padding:16px 18px 0}.athlete-text-button{padding:18px}.athlete-filters{padding:18px;gap:14px}.athlete-filters label{justify-content:space-between;flex:1 1 100%}.athlete-filters select{flex:0 1 200px;max-width:70%}}
+
+.athlete-stats-table .athlete-pending-stats{color:#77717a;text-align:center;font-style:italic}

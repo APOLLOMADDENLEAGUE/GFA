@@ -1,6 +1,6 @@
 /* Current-season pages use a separate dataset so Seasons 1–4 stay in the archive.
  * Team: {id,name,logo,colors:{primary,secondary}}.
- * Player: {id,name,teamId,position,number,model,stats:{...archive stat keys}}.
+ * Player: {id,name,aliases:[],teamId,position,number,portrait,model,stats:{...archive stat keys}}.
  * Game: {id,week,date (ISO 8601 with offset),homeTeamId,awayTeamId,status,
  *        homeScore,awayScore}. A final result requires both scores.
  * Game log: {playerId,gameId,stats}; award: {playerId,label,detail}.
@@ -55,7 +55,7 @@ window.GFASeason = (() => {
     if (!season.teams.length) return empty('Teams coming soon', `Confirmed ${label()} teams and rosters will be announced here.`);
     return `<div class="team-grid season-team-grid">${season.teams.map(t=>{
       const count=season.players.filter(p=>p.teamId===t.id).length;
-      return `<a class="team-card season-team-card" href="${teamHref(t.id)}" style="${colors(t)}"><span class="season-card-label">${esc(label())}</span><span class="season-card-art"><span class="season-logo">${logo(t)}</span></span><h3>${esc(t.name)}</h3><div class="season-card-footer"><p>${count?`${count} players`:'Roster coming soon'}</p><span class="season-card-link">View team</span></div></a>`;
+      return `<a class="team-card season-team-card" href="${teamHref(t.id)}" style="${colors(t)}"><span class="season-card-label">${esc(label())}</span><span class="season-card-art"><span class="season-logo">${logo(t)}</span></span><h3>${esc(t.name)}</h3><div class="season-card-footer"><p>${count?`${count} ${count===1?'player':'players'}`:'Roster coming soon'}</p><span class="season-card-link">View team</span></div></a>`;
     }).join('')}</div>`;
   }
 
@@ -90,13 +90,95 @@ window.GFASeason = (() => {
     const words=t.name.trim().split(/\s+/),last=words.pop();
     const status=season.status==='preseason'?'Preseason':season.status==='complete'?'Season complete':'Regular season';
     const summary=r.gp?`<div class="team-results-strip" aria-label="Season record">${[['RECORD',`${r.w}–${r.l}${r.t?`–${r.t}`:''}`],['GAMES PLAYED',r.gp],['POINTS FOR',r.pf],['POINTS AGAINST',r.pa]].map(([title,value])=>`<div><span>${title}</span><strong>${esc(value)}</strong></div>`).join('')}</div>`:'';
-    main.innerHTML=`<article class="team-profile" style="${colors(t)}"><section class="team-profile-hero"><div class="team-profile-wrap"><a class="profile-back" href="#teams/${enc(season.id)}">All ${esc(label())} teams</a><div class="team-profile-heading"><div class="team-profile-identity"><div class="team-profile-meta"><span>${esc(label())}</span><span class="team-profile-status">${esc(status)}</span></div><h1>${words.length?esc(words.join(' '))+'<br>':''}<span>${esc(last)}</span></h1><p>GRIDIRON 7V7</p></div><div class="team-profile-crest">${logo(t)}</div></div></div></section><div class="team-profile-content wrap">${summary}<div class="team-profile-sections"><section aria-labelledby="team-roster-title"><div class="section-head"><h2 id="team-roster-title">ROSTER</h2><span class="tag">${roster.length?`${roster.length} PLAYERS`:'COMING SOON'}</span></div>${roster.length?`<div class="panel table-scroll"><table><thead><tr><th>PLAYER</th><th>NUMBER</th><th>POSITION</th></tr></thead><tbody>${roster.map(p=>`<tr><td><a class="roster-player" href="${playerHref(p)}">${asset(p.model)?`<img src="${esc(asset(p.model))}" alt="" loading="lazy">`:''}${esc(p.name)}</a></td><td>${p.number===undefined||p.number===null?'—':esc(p.number)}</td><td>${esc(p.position||'—')}</td></tr>`).join('')}</tbody></table></div>`:`<div class="team-profile-pending"><span class="team-pending-label">THE PLAYERS</span><h3>Roster coming soon.</h3><p>The ${esc(t.name)} roster and player positions will appear here when announced.</p></div>`}</section><section aria-labelledby="team-schedule-title"><div class="section-head"><h2 id="team-schedule-title">SCHEDULE</h2><span class="tag">SEASON ${esc(season.id)}</span></div>${games.length?scheduleMarkup(games,t.id):`<div class="team-profile-pending"><span class="team-pending-label">THE MATCHUPS</span><h3>Schedule coming soon.</h3><p>Opponents, game times, and results will be added here for ${esc(label())}.</p></div>`}</section></div></div></article>`;
+    main.innerHTML=`<article class="team-profile" style="${colors(t)}"><section class="team-profile-hero"><div class="team-profile-wrap"><a class="profile-back" href="#teams/${enc(season.id)}">All ${esc(label())} teams</a><div class="team-profile-heading"><div class="team-profile-identity"><div class="team-profile-meta"><span>${esc(label())}</span><span class="team-profile-status">${esc(status)}</span></div><h1>${words.length?esc(words.join(' '))+'<br>':''}<span>${esc(last)}</span></h1><p>GRIDIRON 7V7</p></div><div class="team-profile-crest">${logo(t)}</div></div></div></section><div class="team-profile-content wrap">${summary}<div class="team-profile-sections"><section aria-labelledby="team-roster-title"><div class="section-head"><h2 id="team-roster-title">ROSTER</h2><span class="tag">${roster.length?`${roster.length} ${roster.length===1?'PLAYER':'PLAYERS'}`:'COMING SOON'}</span></div>${roster.length?`<div class="panel table-scroll"><table><thead><tr><th>PLAYER</th><th>NUMBER</th><th>POSITION</th></tr></thead><tbody>${roster.map(p=>`<tr><td><a class="roster-player" href="${playerHref(p)}">${asset(p.portrait||p.model)?`<img src="${esc(asset(p.portrait||p.model))}" alt="" loading="lazy">`:''}${esc(p.name)}</a></td><td>${p.number===undefined||p.number===null?'—':esc(p.number)}</td><td>${esc(p.position||'—')}</td></tr>`).join('')}</tbody></table></div>`:`<div class="team-profile-pending"><span class="team-pending-label">THE PLAYERS</span><h3>Roster coming soon.</h3><p>The ${esc(t.name)} roster and player positions will appear here when announced.</p></div>`}</section><section aria-labelledby="team-schedule-title"><div class="section-head"><h2 id="team-schedule-title">SCHEDULE</h2><span class="tag">SEASON ${esc(season.id)}</span></div>${games.length?scheduleMarkup(games,t.id):`<div class="team-profile-pending"><span class="team-pending-label">THE MATCHUPS</span><h3>Schedule coming soon.</h3><p>Opponents, game times, and results will be added here for ${esc(label())}.</p></div>`}</section></div></div></article>`;
     document.title=`${t.name} | ${label()}`;
   }
 
+  function athletePageCurrent(p) {
+    const t=team(p.teamId),normal=value=>String(value||'').trim().toLowerCase();
+    const aliases=[...new Set([p.name,...(p.aliases||[])].map(normal))];
+    const matches=name=>aliases.includes(normal(name));
+    const oldNames=(p.aliases||[]).filter(name=>normal(name)!==normal(p.name));
+    const currentStats=p.stats&&Object.keys(p.stats).length?p.stats:null;
+    const position={WR:'Wide receiver',QB:'Quarterback',RB:'Running back',OL:'Offensive line',LINE:'Lineman',FLEX:'Flex'}[p.position]||p.position||'Player';
+    const available=value=>value!==null&&value!==undefined&&value!==''&&value!=='—';
+    const stat=(value,key='')=>!available(value)?'—':key==='Comp %'?esc(value):Number.isFinite(Number(String(value).replaceAll(',','')))?Number(String(value).replaceAll(',','')).toLocaleString('en-US',{maximumFractionDigits:key==='AVG'?1:3,minimumFractionDigits:key==='AVG'?1:0}):esc(value);
+    function combine(rows) {
+      if(!rows.length)return null;
+      if(rows.length===1)return {...rows[0]};
+      const combined={};
+      [...new Set(Object.values(categories).flat())].filter(key=>key!=='Comp %').forEach(key=>{const values=rows.map(row=>row[key]).filter(available);combined[key]=values.length?values.reduce((sum,value)=>sum+num(value),0):null;});
+      combined['Comp %']=num(combined.Attempts)?`${(100*num(combined.Completions)/num(combined.Attempts)).toFixed(1)}%`:null;
+      return combined;
+    }
+    const history=stage=>[1,2,3,4].flatMap(s=>{const rows=(D[stage]?.[s]||[]).filter(row=>matches(row['Player Name']));return rows.length?[{s,stats:combine(rows),source:rows[0]}]:[];});
+    const regular=history('players'),playoffs=history('playoffs');
+    const archivedCareer=combine(regular.filter(row=>row.s!==4).map(row=>row.stats));
+    const oldAwards=D.awards.filter(award=>matches(award.name));
+    const newAwards=season.awards.filter(award=>award.playerId===p.id);
+    const avg=stats=>stats&&num(stats.Receptions)?num(stats['Rec Yards'])/num(stats.Receptions):null;
+    const receiving=['Games Played','Receptions','Rec Yards','Rec TDs','AVG'];
+    const short={'Games Played':'GP','Receptions':'REC','Rec Yards':'YDS','Rec TDs':'TD','AVG':'AVG','Pass Yards':'YDS','Pass TDs':'TD','Pass INTs':'INT','Rush Yards':'YDS','Rush TDs':'TD','Comp %':'CMP%'};
+    const value=(stats,key)=>key==='AVG'?avg(stats):stats?.[key];
+    const reviewNote=regular.some(row=>row.s===4)?'<p class="athlete-data-note">Season 4 statistics are under review and are excluded from the verified totals.</p>':'';
+    const noData=(title,detail)=>`<div class="athlete-empty"><h3>${esc(title)}</h3><p>${esc(detail)}</p></div>`;
+    const card=(title,body,subtitle='')=>`<section class="athlete-card"><div class="athlete-card-heading"><h2>${esc(title)}</h2>${subtitle?`<span>${esc(subtitle)}</span>`:''}</div>${body}</section>`;
+    function historyTeam(row) {
+      const recorded=Object.entries(D.rosters?.[row.s]||{}).find(([,roster])=>roster.some(entry=>matches(entry.name)))?.[0]||row.source?.Team||'';
+      const full=(D.standings[row.s]||[]).find(entry=>entry.team===recorded||recorded&&entry.team.endsWith(' '+recorded))?.team;
+      return full?`<a href="#team/${row.s}/${enc(full)}">${esc(full)}</a>`:esc(recorded||'—');
+    }
+    function statTable(rows,cols,total,includeCurrent=false) {
+      const currentRow=includeCurrent&&currentStats?`<tr><th scope="row">Season ${esc(season.id)}</th>${cols.map(key=>`<td>${stat(value(currentStats,key),key)}</td>`).join('')}</tr>`:'';
+      return `<div class="table-scroll"><table class="athlete-stats-table"><thead><tr><th scope="col">SEASON</th>${cols.map(key=>`<th scope="col"><abbr title="${esc(key==='AVG'?'Yards per reception':key)}">${esc(short[key]||key.toUpperCase())}</abbr></th>`).join('')}</tr></thead><tbody>${currentRow}${[...rows].reverse().map(row=>`<tr><th scope="row"><a href="#stats/${row.s}">Season ${row.s}${row.s===4?'*':''}</a></th>${row.s===4?`<td colspan="${cols.length}" class="athlete-pending-stats">Under review</td>`:cols.map(key=>`<td>${stat(value(row.stats,key),key)}</td>`).join('')}</tr>`).join('')}</tbody>${total?`<tfoot><tr><th scope="row">Verified total</th>${cols.map(key=>`<td>${stat(value(total,key),key)}</td>`).join('')}</tr></tfoot>`:''}</table></div>`;
+    }
+    const summaryKeys=p.position==='QB'?[['YDS','Pass Yards'],['TD','Pass TDs'],['INT','Pass INTs'],['CMP%','Comp %']]:['OL','LINE'].includes(p.position)?[['BLK','Blocks'],['SACK','Sacks'],['TKL','Tackles'],['GP','Games Played']]:[['REC','Receptions'],['YDS','Rec Yards'],['TD','Rec TDs'],['AVG','AVG']];
+    const image=asset(p.portrait||p.model);
+    const hasNumber=p.number!==null&&p.number!==undefined&&p.number!=='';
+    const tabs=['Overview','Stats','Game Log','Career','Awards'];
+    main.innerHTML=`<article class="athlete-page" style="${colors(t)}"><section class="athlete-header"><div class="athlete-header-inner"><a class="athlete-back" href="${t?teamHref(t.id):'#teams/'+enc(season.id)}">${t?esc(t.name)+' roster':esc(label())+' teams'}</a><div class="athlete-header-row"><div class="athlete-portrait">${image?`<img src="${esc(image)}" alt="${esc(p.name)} head-and-shoulders portrait" width="1254" height="1254">`:`<span aria-hidden="true">${esc(hasNumber?p.number:initials(p.name))}</span>`}</div><div class="athlete-identity">${t?`<a class="athlete-team" href="${teamHref(t.id)}"><span>${logo(t)}</span>${esc(t.name)}</a>`:''}<h1>${esc(p.name)}</h1><div class="athlete-position">${hasNumber?`<span>#${esc(p.number)}</span>`:''}<span>${esc(position)}</span></div>${oldNames.length?`<p class="athlete-alias">Also known as ${esc(oldNames.join(', '))}</p>`:''}</div><aside class="athlete-season-summary" aria-label="Current season statistics"><h2>SEASON ${esc(season.id)} <span>${esc(season.status==='preseason'?'PRESEASON':season.status==='complete'?'COMPLETE':'REGULAR SEASON')}</span></h2><dl>${summaryKeys.map(([title,key])=>`<div><dt>${title}</dt><dd>${stat(value(currentStats,key),key)}</dd></div>`).join('')}</dl><p>${currentStats?'Current season statistics':'Season statistics coming soon'}</p></aside></div></div></section><div class="athlete-tabbar"><div class="profile-tabbar" role="tablist" aria-label="Player profile sections">${tabs.map((tab,i)=>`<button type="button" role="tab" id="profile-tab-${i}" aria-controls="player-profile-content" aria-selected="${i===0}" tabindex="${i===0?0:-1}" data-profile-tab="${i}">${tab}</button>`).join('')}</div></div><div class="athlete-content"><div id="player-profile-content" role="tabpanel" tabindex="0" aria-labelledby="profile-tab-0"></div></div></article>`;
+    const overview=()=>{
+      const careerSummary=archivedCareer?`<dl class="athlete-career-summary">${summaryKeys.map(([title,key])=>`<div><dt>${title}</dt><dd>${stat(value(archivedCareer,key),key)}</dd></div>`).join('')}</dl>`:noData('Career stats coming soon','No historical statistics are recorded under this player’s names.');
+      const details=`<dl class="athlete-details"><div><dt>TEAM</dt><dd>${t?`<a href="${teamHref(t.id)}">${esc(t.name)}</a>`:'—'}</dd></div><div><dt>POSITION</dt><dd>${esc(position)}</dd></div>${hasNumber?`<div><dt>NUMBER</dt><dd>#${esc(p.number)}</dd></div>`:''}<div><dt>SEASON</dt><dd>${esc(label())}</dd></div>${oldNames.length?`<div><dt>HISTORY UNDER</dt><dd>${esc(oldNames.join(', '))}</dd></div>`:''}</dl>`;
+      const careerBody=careerSummary+(regular.length?statTable(regular,receiving,archivedCareer):'')+reviewNote+`<button class="athlete-text-button" type="button" data-show-profile-tab="1">View complete stats</button>`;
+      return `<div class="athlete-overview-grid"><div>${card(p.position==='WR'?'Career receiving':'Career statistics',careerBody,'VERIFIED SEASON ARCHIVE')}</div><aside>${card('Player information',details)}${card(label(),currentStats?`<p class="athlete-card-copy">${stat(currentStats['Games Played'])} games recorded this season.</p>`:noData('Ready for Season '+season.id,'Player stats and game performances will appear here as results are recorded.'))}</aside></div>`;
+    };
+    function drawStats() {
+      const category=document.querySelector('#athlete-stat-category').value,stage=document.querySelector('#athlete-stat-stage').value;
+      const rows=stage==='playoffs'?playoffs:regular,total=stage==='playoffs'?combine(playoffs.map(row=>row.stats)):archivedCareer;
+      const cols=category==='Receiving'?receiving:categories[category];
+      document.querySelector('#athlete-stat-table').innerHTML=rows.length||stage==='players'&&currentStats?statTable(rows,cols,total,stage==='players')+(stage==='players'?reviewNote:''):noData('Statistics coming soon','No '+(stage==='playoffs'?'playoff':'regular-season')+' statistics have been recorded under this player’s names.');
+    }
+    function draw(tab) {
+      const content=document.querySelector('#player-profile-content');
+      document.querySelectorAll('[data-profile-tab]').forEach((button,i)=>{button.setAttribute('aria-selected',String(i===tab));button.tabIndex=i===tab?0:-1;});
+      content.setAttribute('aria-labelledby',`profile-tab-${tab}`);
+      if(tab===0)content.innerHTML=overview();
+      if(tab===1){
+        const preferred=p.position==='QB'?'Passing':['OL','LINE'].includes(p.position)?'Blocking':'Receiving';
+        content.innerHTML=card('Player statistics',`<div class="athlete-filters"><label>Category <select id="athlete-stat-category">${Object.keys(categories).map(category=>`<option${category===preferred?' selected':''}>${category}</option>`).join('')}</select></label><label>Stage <select id="athlete-stat-stage"><option value="players">Regular season</option><option value="playoffs">Playoffs</option></select></label></div><div id="athlete-stat-table"></div>`);
+        document.querySelector('#athlete-stat-category').onchange=drawStats;document.querySelector('#athlete-stat-stage').onchange=drawStats;drawStats();
+      }
+      if(tab===2){
+        const logs=season.gameLogs.filter(log=>log.playerId===p.id);
+        content.innerHTML=card('Game log',logs.length?`<div class="table-scroll"><table class="athlete-stats-table"><thead><tr><th>GAME</th><th>REC</th><th>YDS</th><th>TD</th><th>TACKLES</th><th>INT</th></tr></thead><tbody>${logs.map(log=>{const g=season.games.find(g=>g.id===log.gameId),opponent=g?(g.homeTeamId===p.teamId?g.awayTeamId:g.homeTeamId):null;return `<tr><th scope="row">${g?`Week ${esc(g.week||'—')} · ${esc(teamName(opponent))}`:'Game'}</th>${['Receptions','Rec Yards','Rec TDs','Tackles','INTs'].map(key=>`<td>${stat(log.stats?.[key],key)}</td>`).join('')}</tr>`;}).join('')}</tbody></table></div>`:noData('No Season '+season.id+' games recorded yet','Individual game performances will appear here after results are recorded.'),label());
+      }
+      if(tab===3){
+        const rows=[...regular].reverse();
+        const careerTable=`<div class="table-scroll"><table class="athlete-stats-table"><thead><tr><th>SEASON</th><th>TEAM</th><th>GP</th><th>REC</th><th>YDS</th><th>TD</th></tr></thead><tbody><tr><th scope="row">Season ${esc(season.id)}</th><td>${t?`<a href="${teamHref(t.id)}">${esc(t.name)}</a>`:'—'}</td>${['Games Played','Receptions','Rec Yards','Rec TDs'].map(key=>`<td>${stat(currentStats?.[key],key)}</td>`).join('')}</tr>${rows.map(row=>`<tr><th scope="row">Season ${row.s}${row.s===4?'*':''}</th><td>${historyTeam(row)}</td>${row.s===4?'<td colspan="4" class="athlete-pending-stats">Under review</td>':['Games Played','Receptions','Rec Yards','Rec TDs'].map(key=>`<td>${stat(row.stats[key],key)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>${reviewNote}`;
+        content.innerHTML=card('Career history',careerTable,'REGULAR SEASON')+(oldNames.length?`<p class="athlete-identity-note">Historical records under ${esc(oldNames.join(', '))} are linked to ${esc(p.name)}.</p>`:'');
+      }
+      if(tab===4)content.innerHTML=card('Player awards',oldAwards.length||newAwards.length?`<div class="award-grid">${oldAwards.map(awardCard).join('')}${newAwards.map(award=>`<article class="award"><span class="tag">${esc(label())}</span><h3>${esc(award.label)}</h3><p>${esc(award.detail||'')}</p></article>`).join('')}</div>`:noData('No awards recorded','Player awards will appear here when announced.'));
+      document.querySelectorAll('[data-show-profile-tab]').forEach(button=>button.onclick=()=>{const index=Number(button.dataset.showProfileTab);draw(index);buttons[index].focus();});
+    }
+    const buttons=[...document.querySelectorAll('[data-profile-tab]')];
+    buttons.forEach((button,i)=>{button.onclick=()=>draw(i);button.onkeydown=e=>{let index;if(e.key==='ArrowRight')index=(i+1)%buttons.length;else if(e.key==='ArrowLeft')index=(i+buttons.length-1)%buttons.length;else if(e.key==='Home')index=0;else if(e.key==='End')index=buttons.length-1;else return;e.preventDefault();draw(index);buttons[index].focus();};});
+    draw(0);document.title=`${p.name} #${p.number} | ${t?.name||label()} | GFA`;
+  }
   function playerPageCurrent(identifier) {
     const normal=s=>String(s||'').toLowerCase();
-    const p=season.players.find(p=>p.id===identifier||normal(p.name)===normal(identifier));
+    const p=season.players.find(p=>[p.id,p.name,...(p.aliases||[])].some(name=>normal(name).trim()===normal(identifier).trim()));
+    if(p)return athletePageCurrent(p);
     const name=p?.name||identifier;
     const career=D.players.all.find(p=>normal(p['Player Name'])===normal(name));
     const archive=[1,2,3,4].flatMap(s=>(D.players[s]||[]).filter(p=>normal(p['Player Name'])===normal(name)).map(p=>({s,p})));

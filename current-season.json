@@ -13,7 +13,19 @@
       }
     }
   ],
-  "players": [],
+  "players": [
+    {
+      "id": "csn",
+      "name": "CSN",
+      "aliases": [
+        "Chazz"
+      ],
+      "teamId": "pink-kangaroos",
+      "position": "WR",
+      "number": 11,
+      "portrait": "assets/players/csn-headshot.webp"
+    }
+  ],
   "games": [],
   "gameLogs": [],
   "awards": []
