@@ -85,7 +85,7 @@ window.GFASeason = (() => {
   }
   function teamPageCurrent(id) {
     const t=team(id)||season.teams.find(t=>t.name===id);if(!t)return missing();
-    const roster=season.players.filter(p=>p.teamId===t.id),r=records().find(r=>r.team.id===t.id);
+    const roster=sortRoster(season.players.filter(p=>p.teamId===t.id)),r=records().find(r=>r.team.id===t.id);
     const games=season.games.filter(g=>g.homeTeamId===t.id||g.awayTeamId===t.id);
     const words=t.name.trim().split(/\s+/),last=words.pop();
     const status=season.status==='preseason'?'Preseason':season.status==='complete'?'Season complete':'Regular season';
