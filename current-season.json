@@ -119,6 +119,24 @@
         "primary": "#ff7900",
         "secondary": "#3c0f56"
       }
+    },
+    {
+      "id": "pink-flamingos",
+      "name": "Pink Flamingos",
+      "logo": "assets/teams/pink-flamingos.webp",
+      "colors": {
+        "primary": "#ff0070",
+        "secondary": "#073645"
+      }
+    },
+    {
+      "id": "tapirs",
+      "name": "Tapirs",
+      "logo": "assets/teams/tapirs.webp",
+      "colors": {
+        "primary": "#fff000",
+        "secondary": "#21160e"
+      }
     }
   ],
   "players": [
@@ -148,6 +166,530 @@
       "position": "QB",
       "number": null,
       "portrait": "assets/players/lunar-headshot.webp"
+    },
+    {
+      "id": "darksubject",
+      "name": "DarkSubject",
+      "teamId": "hellhounds",
+      "position": "QB",
+      "number": null
+    },
+    {
+      "id": "davante",
+      "name": "Davante",
+      "teamId": "hellhounds",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "gaminbruh",
+      "name": "GaminBruh",
+      "teamId": "hellhounds",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "esitt",
+      "name": "Esitt",
+      "teamId": "hellhounds",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "veresed",
+      "name": "Veresed",
+      "teamId": "hellhounds",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "black-fish",
+      "name": "Black Fish",
+      "teamId": "hellhounds",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "major-syn",
+      "name": "Major Syn",
+      "teamId": "hellhounds",
+      "position": "FLEX",
+      "number": null
+    },
+    {
+      "id": "rocket-man",
+      "name": "Rocket Man",
+      "teamId": "hellhounds",
+      "position": "FLEX",
+      "number": null
+    },
+    {
+      "id": "exceptionally-medicore",
+      "name": "Exceptionally Medicore",
+      "teamId": "hellhounds",
+      "position": "FLEX",
+      "number": null
+    },
+    {
+      "id": "the-guy",
+      "name": "The Guy",
+      "teamId": "hellhounds",
+      "position": "FLEX",
+      "number": null
+    },
+    {
+      "id": "spoof",
+      "name": "Spoof",
+      "teamId": "tapirs",
+      "position": "QB",
+      "number": null
+    },
+    {
+      "id": "crims",
+      "name": "Crims",
+      "teamId": "tapirs",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "twhy",
+      "name": "Twhy",
+      "teamId": "tapirs",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "goodbadugly",
+      "name": "GoodBadUgly",
+      "teamId": "tapirs",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "donga",
+      "name": "Donga",
+      "teamId": "tapirs",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "kasper",
+      "name": "Kasper",
+      "teamId": "tapirs",
+      "position": "RB",
+      "number": null
+    },
+    {
+      "id": "togaed",
+      "name": "TogaEd",
+      "teamId": "tapirs",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "briggs",
+      "name": "Briggs",
+      "teamId": "tapirs",
+      "position": "OL",
+      "number": null,
+      "additionalRoles": [
+        "Backup QB"
+      ]
+    },
+    {
+      "id": "shaggy-tapir",
+      "name": "Shaggy Tapir",
+      "teamId": "tapirs",
+      "position": "FLEX",
+      "number": null
+    },
+    {
+      "id": "boofed",
+      "name": "Boofed",
+      "teamId": "tapirs",
+      "position": "FLEX",
+      "number": null
+    },
+    {
+      "id": "lt-dan",
+      "name": "LT Dan",
+      "teamId": "tapirs",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "matteh",
+      "name": "Matteh",
+      "teamId": "fang",
+      "position": "QB",
+      "number": null
+    },
+    {
+      "id": "death",
+      "name": "Death",
+      "teamId": "fang",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "mai",
+      "name": "Mai",
+      "teamId": "fang",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "oskeet",
+      "name": "Oskeet",
+      "teamId": "fang",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "yams",
+      "name": "Yams",
+      "teamId": "fang",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "divinerloco",
+      "name": "DivinerLoco",
+      "teamId": "fang",
+      "position": "RB",
+      "number": null
+    },
+    {
+      "id": "lus75",
+      "name": "Lus75",
+      "teamId": "fang",
+      "position": "OL",
+      "number": null,
+      "positionDetail": "T"
+    },
+    {
+      "id": "bigbrobanana",
+      "name": "BigBroBanana",
+      "teamId": "fang",
+      "position": "OL",
+      "number": null,
+      "positionDetail": "T"
+    },
+    {
+      "id": "pulzy",
+      "name": "Pulzy",
+      "teamId": "fang",
+      "position": "OL",
+      "number": null,
+      "positionDetail": "T"
+    },
+    {
+      "id": "juice",
+      "name": "Juice",
+      "teamId": "fang",
+      "position": "OL",
+      "number": null,
+      "positionDetail": "C/NT"
+    },
+    {
+      "id": "tcraft",
+      "name": "Tcraft",
+      "teamId": "fang",
+      "position": "OL",
+      "number": null,
+      "positionDetail": "C/NT"
+    },
+    {
+      "id": "leadoffplague",
+      "name": "Leadoffplague",
+      "teamId": "pink-flamingos",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "qwack",
+      "name": "Qwack",
+      "teamId": "pink-flamingos",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "jantz",
+      "name": "Jantz",
+      "teamId": "pink-flamingos",
+      "position": "QB",
+      "number": null
+    },
+    {
+      "id": "airman",
+      "name": "Airman",
+      "teamId": "pink-flamingos",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "sean706",
+      "name": "Sean706",
+      "teamId": "pink-flamingos",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "fenchii",
+      "name": "Fenchii",
+      "teamId": "pink-flamingos",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "venomous",
+      "name": "venomous",
+      "teamId": "pink-flamingos",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "devil",
+      "name": "DEVIL",
+      "teamId": "pink-flamingos",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "blurry",
+      "name": "Blurry",
+      "teamId": "red-clover",
+      "position": "QB",
+      "number": null
+    },
+    {
+      "id": "gardner",
+      "name": "Gardner",
+      "teamId": "red-clover",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "captain-smith-njigba",
+      "name": "Captain Smith-Njigba",
+      "teamId": "red-clover",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "bo-blazin",
+      "name": "bo blazin",
+      "teamId": "red-clover",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "cj",
+      "name": "CJ",
+      "teamId": "red-clover",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "bobby-shmurda",
+      "name": "Bobby Shmurda",
+      "teamId": "red-clover",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "bubblegum",
+      "name": "BubbleGum",
+      "teamId": "red-clover",
+      "position": "FLEX",
+      "number": null
+    },
+    {
+      "id": "neymaur-sr",
+      "name": "NeyMaur Sr.",
+      "teamId": "red-clover",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "cornman",
+      "name": "Cornman",
+      "teamId": "red-clover",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "jbknuckles",
+      "name": "JBKnuckles",
+      "teamId": "red-clover",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "alexander",
+      "name": "Alexander",
+      "teamId": "red-clover",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "mvp",
+      "name": "MvP",
+      "teamId": "hexxed",
+      "position": "QB",
+      "number": null
+    },
+    {
+      "id": "dong",
+      "name": "dong",
+      "teamId": "hexxed",
+      "position": "WR",
+      "number": null,
+      "aliases": [
+        "dongfrog"
+      ]
+    },
+    {
+      "id": "conr",
+      "name": "Conr",
+      "teamId": "hexxed",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "avatard",
+      "name": "Avatard",
+      "teamId": "hexxed",
+      "position": "WR",
+      "number": null,
+      "aliases": [
+        "BBQ Pringle"
+      ]
+    },
+    {
+      "id": "spxrks",
+      "name": "Spxrks",
+      "teamId": "hexxed",
+      "position": "WR",
+      "number": null,
+      "aliases": [
+        "yak"
+      ]
+    },
+    {
+      "id": "resp",
+      "name": "Resp",
+      "teamId": "hexxed",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "chicken",
+      "name": "Chicken-",
+      "teamId": "hexxed",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "azzeatinszn",
+      "name": "azzeatinszn",
+      "teamId": "hexxed",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "the-dave",
+      "name": "The Dave",
+      "teamId": "hexxed",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "vishy",
+      "name": "Vishy",
+      "teamId": "hexxed",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "thatonenajeep",
+      "name": "ThatOnenajeep",
+      "teamId": "hexxed",
+      "position": "FLEX",
+      "number": null,
+      "aliases": [
+        "malik"
+      ]
+    },
+    {
+      "id": "skitso",
+      "name": "Skitso",
+      "teamId": "alien",
+      "position": "QB",
+      "number": null
+    },
+    {
+      "id": "flows",
+      "name": "Flows",
+      "teamId": "alien",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "creamy",
+      "name": "creamy",
+      "teamId": "alien",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "ambition",
+      "name": "Ambition",
+      "teamId": "alien",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "vanco",
+      "name": "Vanco",
+      "teamId": "alien",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "loba",
+      "name": "Loba",
+      "teamId": "alien",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "jarebear",
+      "name": "Jarebear",
+      "teamId": "alien",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "halo",
+      "name": "Halo",
+      "teamId": "alien",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "cambria",
+      "name": "Cambria",
+      "teamId": "alien",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "djkay",
+      "name": "DJKay",
+      "teamId": "alien",
+      "position": "FLEX",
+      "number": null
     }
   ],
   "games": [],
