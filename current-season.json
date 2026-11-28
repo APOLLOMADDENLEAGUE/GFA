@@ -690,6 +690,79 @@
       "teamId": "alien",
       "position": "FLEX",
       "number": null
+    },
+    {
+      "id": "gunslinger",
+      "name": "Gunslinger",
+      "teamId": "ghost",
+      "position": "QB",
+      "number": null
+    },
+    {
+      "id": "itachi",
+      "name": "Itachi",
+      "teamId": "ghost",
+      "position": "RB",
+      "number": null
+    },
+    {
+      "id": "cbz",
+      "name": "CBZ",
+      "teamId": "ghost",
+      "position": "RB",
+      "number": null
+    },
+    {
+      "id": "juju",
+      "name": "Juju",
+      "teamId": "ghost",
+      "position": "WR",
+      "number": null,
+      "additionalRoles": [
+        "Co-captain"
+      ]
+    },
+    {
+      "id": "ralstoc",
+      "name": "Ralstoc",
+      "teamId": "ghost",
+      "position": "WR",
+      "number": null
+    },
+    {
+      "id": "onkey",
+      "name": "Onkey",
+      "teamId": "ghost",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "cheesecake",
+      "name": "cheesecake",
+      "teamId": "ghost",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "deion",
+      "name": "Deion",
+      "teamId": "ghost",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "rj",
+      "name": "RJ",
+      "teamId": "ghost",
+      "position": "OL",
+      "number": null
+    },
+    {
+      "id": "avrell-reese",
+      "name": "Avrell Reese",
+      "teamId": "ghost",
+      "position": "OL",
+      "number": null
     }
   ],
   "games": [],
